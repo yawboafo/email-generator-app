@@ -98,12 +98,12 @@ export default function EmailResults({ emails, meta, onSave }: EmailResultsProps
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
           <div className="bg-blue-50 p-4 rounded-lg">
             <p className="text-sm text-blue-600 font-medium">Total Generated</p>
-            <p className="text-2xl font-bold text-blue-900">{meta.count}</p>
+            <p className="text-2xl font-bold text-blue-900">{meta?.count || 0}</p>
           </div>
           
           <div className="bg-green-50 p-4 rounded-lg">
             <p className="text-sm text-green-600 font-medium">Providers Used</p>
-            <p className="text-2xl font-bold text-green-900">{meta.providersUsed.length}</p>
+            <p className="text-2xl font-bold text-green-900">{meta?.providersUsed?.length || 0}</p>
           </div>
           
           <div className="bg-purple-50 p-4 rounded-lg">
@@ -159,19 +159,21 @@ export default function EmailResults({ emails, meta, onSave }: EmailResultsProps
       </div>
 
       {/* Providers Used */}
-      <div className="mb-4">
-        <p className="text-sm text-gray-600 mb-2">Domains used:</p>
-        <div className="flex flex-wrap gap-2">
-          {meta.providersUsed.map(provider => (
-            <span
-              key={provider}
-              className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm"
-            >
-              @{provider}
-            </span>
-          ))}
+      {meta?.providersUsed && meta.providersUsed.length > 0 && (
+        <div className="mb-4">
+          <p className="text-sm text-gray-600 mb-2">Domains used:</p>
+          <div className="flex flex-wrap gap-2">
+            {meta.providersUsed.map(provider => (
+              <span
+                key={provider}
+                className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm"
+              >
+                @{provider}
+              </span>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Email List */}
       <div className="border rounded-lg overflow-hidden">

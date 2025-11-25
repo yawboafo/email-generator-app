@@ -53,16 +53,138 @@ const WORD_THEMES = {
 };
 
 /**
- * Name components for realistic generation
+ * Profession-specific patterns and indicators
  */
-const NAME_COMPONENTS = {
-  firstNames: ['alex', 'sam', 'jordan', 'taylor', 'morgan', 'casey', 'riley', 'quinn', 'avery', 'blake', 
-               'chris', 'drew', 'jamie', 'kai', 'logan', 'parker', 'rowan', 'sage', 'skylar', 'phoenix',
-               'john', 'jane', 'mike', 'emily', 'david', 'sarah', 'james', 'lisa', 'robert', 'maria'],
-  lastNames: ['smith', 'johnson', 'brown', 'davis', 'wilson', 'moore', 'taylor', 'anderson', 'thomas', 'jackson',
-              'white', 'harris', 'martin', 'garcia', 'martinez', 'robinson', 'clark', 'lewis', 'lee', 'walker'],
-  nicknames: ['ace', 'chief', 'boss', 'king', 'queen', 'hero', 'ninja', 'master', 'guru', 'wizard', 'legend'],
+const PROFESSION_PATTERNS = {
+  banker: {
+    keywords: ['bank', 'banker', 'banking', 'finance', 'financial'],
+    patterns: ['firstname.lastname', 'firstinitiallastname', 'firstname_lastname'],
+    style: 'professional',
+    separators: ['.', '_'],
+    numberStyle: 'minimal', // rarely use numbers
+    domains: ['gmail.com', 'yahoo.com', 'outlook.com', 'icloud.com']
+  },
+  doctor: {
+    keywords: ['doctor', 'physician', 'surgeon', 'medical', 'dr', 'md'],
+    patterns: ['dr.lastname', 'firstname.lastname', 'firstinitiallastname'],
+    style: 'professional',
+    separators: ['.'],
+    numberStyle: 'minimal',
+    domains: ['gmail.com', 'outlook.com', 'icloud.com']
+  },
+  lawyer: {
+    keywords: ['lawyer', 'attorney', 'legal', 'law', 'advocate', 'counsel'],
+    patterns: ['firstname.lastname', 'firstinitiallastname', 'firstname_lastname'],
+    style: 'professional',
+    separators: ['.', '_'],
+    numberStyle: 'minimal',
+    domains: ['gmail.com', 'outlook.com', 'protonmail.com']
+  },
+  engineer: {
+    keywords: ['engineer', 'engineering', 'mechanical', 'civil', 'electrical'],
+    patterns: ['firstname.lastname', 'firstnamelastname', 'firstname_lastname'],
+    style: 'professional',
+    separators: ['.', '_'],
+    numberStyle: 'moderate',
+    domains: ['gmail.com', 'yahoo.com', 'outlook.com']
+  },
+  teacher: {
+    keywords: ['teacher', 'educator', 'professor', 'instructor', 'lecturer'],
+    patterns: ['firstname.lastname', 'firstinitiallastname'],
+    style: 'professional',
+    separators: ['.'],
+    numberStyle: 'minimal',
+    domains: ['gmail.com', 'yahoo.com', 'outlook.com']
+  },
+  developer: {
+    keywords: ['developer', 'programmer', 'coder', 'software', 'dev', 'coding'],
+    patterns: ['firstname.lastname', 'firstnamelastname', 'firstname_lastname', 'nickname'],
+    style: 'tech',
+    separators: ['.', '_'],
+    numberStyle: 'moderate',
+    domains: ['gmail.com', 'outlook.com', 'protonmail.com']
+  },
+  entrepreneur: {
+    keywords: ['entrepreneur', 'founder', 'ceo', 'startup', 'business owner'],
+    patterns: ['firstname.lastname', 'firstnamelastname', 'firstname_lastname'],
+    style: 'business',
+    separators: ['.', '_'],
+    numberStyle: 'light',
+    domains: ['gmail.com', 'outlook.com', 'icloud.com', 'protonmail.com']
+  },
+  student: {
+    keywords: ['student', 'undergraduate', 'graduate', 'pupil', 'learner'],
+    patterns: ['firstnamelastname', 'nickname', 'firstname_lastname'],
+    style: 'casual',
+    separators: ['.', '_'],
+    numberStyle: 'heavy',
+    domains: ['gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com']
+  },
+  artist: {
+    keywords: ['artist', 'designer', 'creative', 'painter', 'illustrator'],
+    patterns: ['nickname', 'firstname.lastname', 'firstname_word'],
+    style: 'creative',
+    separators: ['.', '_'],
+    numberStyle: 'light',
+    domains: ['gmail.com', 'icloud.com', 'protonmail.com']
+  },
+  accountant: {
+    keywords: ['accountant', 'accounting', 'cpa', 'bookkeeper', 'auditor'],
+    patterns: ['firstname.lastname', 'firstinitiallastname'],
+    style: 'professional',
+    separators: ['.'],
+    numberStyle: 'minimal',
+    domains: ['gmail.com', 'outlook.com', 'yahoo.com']
+  },
 };
+
+/**
+ * Country/nationality detection and name data mapping
+ */
+const NATIONALITY_MAP: Record<string, string> = {
+  'ghanaian': 'GH',
+  'ghana': 'GH',
+  'ghanaians': 'GH',
+  'nigerian': 'NG',
+  'nigeria': 'NG',
+  'nigerians': 'NG',
+  'american': 'US',
+  'usa': 'US',
+  'americans': 'US',
+  'united states': 'US',
+  'british': 'UK',
+  'uk': 'UK',
+  'england': 'UK',
+  'english': 'UK',
+  'indian': 'IN',
+  'india': 'IN',
+  'indians': 'IN',
+  'canadian': 'CA',
+  'canada': 'CA',
+  'canadians': 'CA',
+};
+
+import namesData from '@/data/names.json';
+
+/**
+ * Get names from specific country
+ */
+function getNamesForCountry(countryCode: string): { firstNames: string[]; lastNames: string[] } {
+  const countryData = (namesData as any)[countryCode];
+  if (!countryData) {
+    // Fallback to US names
+    const usData = (namesData as any)['US'];
+    return {
+      firstNames: [...usData.firstNames.male, ...usData.firstNames.female, ...usData.firstNames.neutral],
+      lastNames: usData.lastNames
+    };
+  }
+  
+  return {
+    firstNames: [...countryData.firstNames.male, ...countryData.firstNames.female, ...countryData.firstNames.neutral],
+    lastNames: countryData.lastNames
+  };
+}
 
 /**
  * Default providers if none specified
@@ -117,16 +239,64 @@ function generatePronounceable(length: number): string {
  * Parse AI prompt to extract context and generate appropriate emails
  */
 function parsePrompt(prompt: string): {
+  profession: string | null;
+  professionData: typeof PROFESSION_PATTERNS[keyof typeof PROFESSION_PATTERNS] | null;
+  nationality: string | null;
+  countryCode: string;
   themes: string[];
-  style: 'professional' | 'casual' | 'creative' | 'random';
+  style: 'professional' | 'casual' | 'creative' | 'random' | 'tech' | 'business';
   includeNumbers: boolean;
   includeSeparators: boolean;
   ageHint: 'young' | 'middle' | 'mature' | 'any';
   complexity: 'simple' | 'medium' | 'complex';
+  numberStyle: 'minimal' | 'light' | 'moderate' | 'heavy';
 } {
   const lowerPrompt = prompt.toLowerCase();
   
-  // Detect themes
+  // Detect profession
+  let profession: string | null = null;
+  let professionData: typeof PROFESSION_PATTERNS[keyof typeof PROFESSION_PATTERNS] | null = null;
+  
+  for (const [profName, profData] of Object.entries(PROFESSION_PATTERNS)) {
+    if (profData.keywords.some(keyword => lowerPrompt.includes(keyword))) {
+      profession = profName;
+      professionData = profData;
+      break;
+    }
+  }
+  
+  // Detect nationality
+  let nationality: string | null = null;
+  let countryCode = 'US'; // Default
+  
+  for (const [natName, natCode] of Object.entries(NATIONALITY_MAP)) {
+    if (lowerPrompt.includes(natName)) {
+      nationality = natName;
+      countryCode = natCode;
+      break;
+    }
+  }
+  
+  // Use profession data if available
+  if (professionData) {
+    return {
+      profession,
+      professionData,
+      nationality,
+      countryCode,
+      themes: professionData.style === 'professional' ? ['business'] : 
+              professionData.style === 'tech' ? ['tech'] :
+              professionData.style === 'creative' ? ['creative'] : ['casual'],
+      style: professionData.style as any,
+      includeNumbers: professionData.numberStyle !== 'minimal',
+      includeSeparators: professionData.separators.length > 0,
+      ageHint: profession === 'student' ? 'young' : 'middle',
+      complexity: 'medium',
+      numberStyle: professionData.numberStyle as any
+    };
+  }
+  
+  // Fallback to theme-based detection
   const themes: string[] = [];
   if (lowerPrompt.match(/tech|developer|programmer|coder|engineer|software/)) themes.push('tech');
   if (lowerPrompt.match(/business|professional|corporate|executive|manager/)) themes.push('business');
@@ -135,30 +305,38 @@ function parsePrompt(prompt: string): {
   if (lowerPrompt.match(/nature|outdoor|environment/)) themes.push('nature');
   if (lowerPrompt.match(/modern|trendy|new|contemporary/)) themes.push('modern');
   
-  if (themes.length === 0) themes.push('casual'); // Default
+  if (themes.length === 0) themes.push('casual');
   
-  // Detect style
-  let style: 'professional' | 'casual' | 'creative' | 'random' = 'casual';
+  let style: 'professional' | 'casual' | 'creative' | 'random' | 'tech' | 'business' = 'casual';
   if (lowerPrompt.match(/professional|formal|business/)) style = 'professional';
   if (lowerPrompt.match(/creative|unique|artistic/)) style = 'creative';
   if (lowerPrompt.match(/random|mixed|varied|diverse/)) style = 'random';
   
-  // Detect age hints
   let ageHint: 'young' | 'middle' | 'mature' | 'any' = 'any';
   if (lowerPrompt.match(/young|teen|student|gen\s*z/)) ageHint = 'young';
   if (lowerPrompt.match(/middle|adult|working/)) ageHint = 'middle';
   if (lowerPrompt.match(/mature|senior|older/)) ageHint = 'mature';
   
-  // Detect preferences
   const includeNumbers = !lowerPrompt.match(/no\s+numbers|without\s+numbers/);
   const includeSeparators = !lowerPrompt.match(/no\s+dots|no\s+underscores|simple/);
   
-  // Detect complexity
   let complexity: 'simple' | 'medium' | 'complex' = 'medium';
   if (lowerPrompt.match(/simple|basic|easy/)) complexity = 'simple';
   if (lowerPrompt.match(/complex|advanced|sophisticated|elaborate/)) complexity = 'complex';
   
-  return { themes, style, includeNumbers, includeSeparators, ageHint, complexity };
+  return { 
+    profession, 
+    professionData, 
+    nationality, 
+    countryCode, 
+    themes, 
+    style, 
+    includeNumbers, 
+    includeSeparators, 
+    ageHint, 
+    complexity,
+    numberStyle: includeNumbers ? 'moderate' : 'minimal'
+  };
 }
 
 /**
@@ -168,120 +346,133 @@ function generateContextualEmail(
   context: ReturnType<typeof parsePrompt>,
   provider: string
 ): AIGeneratedEmail {
-  const { themes, style, includeNumbers, includeSeparators, ageHint, complexity } = context;
+  const { 
+    profession, 
+    professionData, 
+    nationality, 
+    countryCode, 
+    themes, 
+    style, 
+    includeNumbers, 
+    includeSeparators, 
+    ageHint, 
+    complexity,
+    numberStyle 
+  } = context;
+  
+  // Get names from the appropriate country
+  const { firstNames, lastNames } = getNamesForCountry(countryCode);
   
   let localPart = '';
   let persona = '';
   let reasoning = '';
   
-  const theme = getRandom(themes);
-  const themeWords = WORD_THEMES[theme as keyof typeof WORD_THEMES] || WORD_THEMES.casual;
+  const firstName = getRandom(firstNames).toLowerCase();
+  const lastName = getRandom(lastNames).toLowerCase();
+  const firstInitial = firstName.charAt(0);
   
-  // Generate based on style and complexity
-  if (style === 'professional') {
-    const firstName = getRandom(NAME_COMPONENTS.firstNames);
-    const lastName = getRandom(NAME_COMPONENTS.lastNames);
+  // If profession is detected, use profession-specific patterns
+  if (profession && professionData) {
+    const pattern = getRandom(professionData.patterns);
+    const separator = professionData.separators.length > 0 ? getRandom(professionData.separators) : '';
     
-    if (complexity === 'simple') {
-      localPart = `${firstName}.${lastName}`;
-      persona = 'Professional user with standard naming';
-    } else if (complexity === 'medium') {
-      const initial = firstName.charAt(0);
-      localPart = Math.random() > 0.5 
-        ? `${firstName}.${lastName}` 
-        : `${initial}.${lastName}`;
-      if (includeNumbers) localPart += randomNum(1, 99);
-      persona = 'Professional with possible numeric suffix';
-    } else {
-      localPart = `${firstName}.${lastName[0]}.${getRandom(themeWords)}`;
-      if (includeNumbers) localPart += randomNum(100, 999);
-      persona = 'Professional with role indicator';
-    }
-    reasoning = 'Generated professional-style email for business context';
-    
-  } else if (style === 'creative') {
-    const base = getRandom(themeWords);
-    const adjective = getRandom(WORD_THEMES.adjectives);
-    
-    if (complexity === 'simple') {
-      localPart = `${base}${adjective}`;
-      persona = 'Creative user with descriptive name';
-    } else if (complexity === 'medium') {
-      const separator = includeSeparators ? getRandom(CHAR_SETS.specialChars) : '';
-      localPart = `${adjective}${separator}${base}`;
-      if (includeNumbers) localPart += randomNum(1, 999);
-      persona = 'Creative user with thematic elements';
-    } else {
-      const word1 = getRandom(themeWords);
-      const word2 = getRandom(WORD_THEMES.action);
-      const separator = includeSeparators ? getRandom(CHAR_SETS.specialChars) : '';
-      localPart = leetSpeak(`${word1}${separator}${word2}`, 0.2);
-      if (includeNumbers) localPart += randomNum(1000, 9999);
-      persona = 'Highly creative user with leet speak elements';
-    }
-    reasoning = 'Generated creative email with thematic words';
-    
-  } else if (style === 'random') {
-    const patternChoice = randomNum(1, 6);
-    
-    switch (patternChoice) {
-      case 1: // Name-based
-        localPart = `${getRandom(NAME_COMPONENTS.firstNames)}${getRandom(NAME_COMPONENTS.lastNames)}`;
-        persona = 'Random user with name-based pattern';
+    switch (pattern) {
+      case 'firstname.lastname':
+        localPart = `${firstName}.${lastName}`;
         break;
-      case 2: // Nickname-based
-        localPart = `${getRandom(NAME_COMPONENTS.nicknames)}${getRandom(themeWords)}`;
-        persona = 'Random user with nickname pattern';
+      case 'firstnamelastname':
+        localPart = `${firstName}${lastName}`;
         break;
-      case 3: // Theme combo
-        localPart = `${getRandom(themeWords)}${getRandom(WORD_THEMES.modern)}`;
-        persona = 'Random user with theme combination';
+      case 'firstinitiallastname':
+        localPart = `${firstInitial}${lastName}`;
         break;
-      case 4: // Pronounceable
-        localPart = generatePronounceable(randomNum(6, 10));
-        persona = 'Random user with pronounceable pattern';
+      case 'firstname_lastname':
+        localPart = `${firstName}_${lastName}`;
         break;
-      case 5: // Hybrid
-        const name = getRandom(NAME_COMPONENTS.firstNames);
-        const word = getRandom(themeWords);
-        localPart = `${name}${word}`;
-        persona = 'Random user with hybrid pattern';
+      case 'firstnamelastinitial':
+        localPart = `${firstName}${lastName.charAt(0)}`;
         break;
-      default: // Numbers heavy
-        localPart = `${getRandom(themeWords)}${randomNum(100, 9999)}`;
-        persona = 'Random user with number-heavy pattern';
+      case 'dr.lastname':
+        localPart = `dr.${lastName}`;
+        break;
+      default:
+        localPart = `${firstName}.${lastName}`;
     }
     
-    if (includeNumbers && Math.random() > 0.5) {
+    // Add numbers based on profession number style
+    if (numberStyle === 'heavy') {
       localPart += randomNum(1, 999);
+    } else if (numberStyle === 'moderate' && Math.random() > 0.5) {
+      localPart += randomNum(1, 99);
+    } else if (numberStyle === 'light' && Math.random() > 0.7) {
+      localPart += randomNum(1, 9);
+    } else if (numberStyle === 'minimal' && Math.random() > 0.9) {
+      localPart += randomNum(1, 9);
     }
-    if (includeSeparators && Math.random() > 0.7) {
-      const parts = localPart.split('');
-      const pos = randomNum(3, parts.length - 2);
-      parts.splice(pos, 0, getRandom(CHAR_SETS.specialChars));
-      localPart = parts.join('');
-    }
-    reasoning = 'Generated random-style email with mixed patterns';
     
-  } else { // casual
-    const firstName = getRandom(NAME_COMPONENTS.firstNames);
-    const word = getRandom(themeWords);
+    persona = `${nationality || countryCode} ${profession} - ${pattern} pattern`;
+    reasoning = `Generated professional ${profession} email for ${nationality || countryCode} using realistic naming conventions`;
     
-    if (ageHint === 'young') {
-      localPart = leetSpeak(`${word}${firstName}`, 0.4);
+  } else {
+    // Fallback to style-based generation with real names
+    const theme = getRandom(themes);
+    const themeWords = WORD_THEMES[theme as keyof typeof WORD_THEMES] || WORD_THEMES.casual;
+    
+    if (style === 'professional' || style === 'business') {
+      if (complexity === 'simple') {
+        localPart = `${firstName}.${lastName}`;
+        persona = `Professional ${nationality || countryCode} user`;
+      } else {
+        const useInitial = Math.random() > 0.5;
+        localPart = useInitial ? `${firstInitial}.${lastName}` : `${firstName}.${lastName}`;
+        if (includeNumbers && Math.random() > 0.7) localPart += randomNum(1, 99);
+        persona = `Professional ${nationality || countryCode} user with possible numbers`;
+      }
+      reasoning = `Generated professional email using ${nationality || countryCode} names`;
+      
+    } else if (style === 'tech') {
+      localPart = `${firstName}.${lastName}`;
       if (includeNumbers) localPart += randomNum(1, 99);
-      persona = 'Young user with leet speak and casual elements';
-    } else if (ageHint === 'mature') {
-      localPart = `${firstName}${getRandom(NAME_COMPONENTS.lastNames)}`;
-      if (includeNumbers) localPart += randomNum(1, 9);
-      persona = 'Mature user with traditional naming';
-    } else {
-      const separator = includeSeparators && Math.random() > 0.5 ? getRandom(CHAR_SETS.specialChars) : '';
-      localPart = `${firstName}${separator}${word}`;
+      persona = `Tech professional from ${nationality || countryCode}`;
+      reasoning = `Generated tech-style email using ${nationality || countryCode} names`;
+      
+    } else if (style === 'creative') {
+      const base = getRandom(themeWords);
+      localPart = `${firstName}${base}`;
       if (includeNumbers && Math.random() > 0.6) localPart += randomNum(1, 999);
-      persona = 'Casual user with mixed elements';
+      persona = `Creative ${nationality || countryCode} user`;
+      reasoning = `Generated creative email with ${nationality || countryCode} names`;
+      
+    } else if (style === 'random') {
+      const patternChoice = randomNum(1, 4);
+      switch (patternChoice) {
+        case 1:
+          localPart = `${firstName}${lastName}`;
+          break;
+        case 2:
+          localPart = `${firstName}.${lastName}`;
+          break;
+        case 3:
+          localPart = `${firstName}_${lastName}`;
+          break;
+        default:
+          localPart = `${firstInitial}${lastName}`;
+      }
+      if (includeNumbers && Math.random() > 0.5) localPart += randomNum(1, 999);
+      persona = `Random ${nationality || countryCode} user`;
+      reasoning = `Generated random-style email using ${nationality || countryCode} names`;
+      
+    } else { // casual
+      if (ageHint === 'young') {
+        localPart = `${firstName}${lastName}${randomNum(1, 99)}`;
+        persona = `Young ${nationality || countryCode} user`;
+      } else {
+        localPart = `${firstName}.${lastName}`;
+        if (includeNumbers && Math.random() > 0.6) localPart += randomNum(1, 9);
+        persona = `Casual ${nationality || countryCode} user`;
+      }
+      reasoning = `Generated casual email using ${nationality || countryCode} names`;
     }
-    reasoning = 'Generated casual email for everyday user';
   }
   
   // Ensure valid email format (no consecutive dots, no starting/ending with dot or underscore)
@@ -362,14 +553,14 @@ export async function aiEmailGenerator({
  * Example usage and preset prompts
  */
 export const EXAMPLE_PROMPTS = [
-  "Generate professional emails for business executives",
-  "Create casual emails for young tech enthusiasts",
-  "Make creative emails for designers and artists",
-  "Generate random diverse emails for testing",
-  "Create professional developer emails with tech terms",
-  "Make casual gaming-related emails for young users",
-  "Generate mature professional emails without special characters",
-  "Create modern trendy emails for social media users",
-  "Generate complex creative emails with numbers and separators",
-  "Make simple clean emails for formal business use"
+  "Give me emails of bankers who are Ghanaians",
+  "Generate emails for Nigerian doctors",
+  "Create emails for Indian software developers",
+  "Make emails for British lawyers",
+  "Generate emails for American teachers",
+  "Create emails for Canadian entrepreneurs",
+  "Make emails for Ghanaian students",
+  "Generate emails for Nigerian accountants",
+  "Create emails for Indian artists",
+  "Make emails for American engineers"
 ];
