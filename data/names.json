@@ -1,0 +1,50 @@
+{
+  "US": {
+    "firstNames": {
+      "male": ["Liam", "Noah", "Oliver", "Theodore", "James", "Henry", "Mateo", "Elijah", "Lucas", "William", "Ethan", "Benjamin", "Mason", "Logan", "Alexander", "Sebastian", "Jack", "Owen", "Jacob", "Michael", "Daniel", "Aiden", "Samuel", "Matthew", "David", "Joseph", "Jackson", "Wyatt", "John", "Luke", "Dylan", "Grayson", "Levi", "Isaac", "Gabriel", "Anthony", "Julian", "Lincoln", "Joshua", "Christopher", "Andrew", "Maverick", "Hudson", "Ezra", "Christian", "Landon", "Adrian", "Jayden", "Jonathan", "Nolan"],
+      "female": ["Olivia", "Emma", "Amelia", "Charlotte", "Mia", "Sophia", "Isabella", "Evelyn", "Ava", "Sofia", "Aria", "Luna", "Harper", "Scarlett", "Ella", "Layla", "Camila", "Madison", "Eleanor", "Elizabeth", "Emily", "Abigail", "Avery", "Grace", "Chloe", "Lily", "Mila", "Victoria", "Hazel", "Penelope", "Nora", "Riley", "Zoey", "Aurora", "Violet", "Hannah", "Stella", "Lucy", "Ellie", "Lillian", "Addison", "Natalie", "Paisley", "Audrey", "Bella", "Claire", "Skylar", "Leah", "Zoe", "Maya"],
+      "neutral": ["Jordan", "Taylor", "Casey", "Riley", "Morgan", "Alex", "Avery", "Quinn", "Cameron", "Sage"]
+    },
+    "lastNames": ["Smith", "Johnson", "Williams", "Brown", "Jones", "Garcia", "Miller", "Davis", "Rodriguez", "Martinez", "Hernandez", "Lopez", "Gonzalez", "Wilson", "Anderson", "Thomas", "Taylor", "Moore", "Jackson", "Martin", "Lee", "Perez", "Thompson", "White", "Harris", "Sanchez", "Clark", "Ramirez", "Lewis", "Robinson", "Walker", "Young", "Allen", "King", "Wright", "Scott", "Torres", "Nguyen", "Hill", "Flores", "Green", "Adams", "Nelson", "Baker", "Hall", "Rivera", "Campbell", "Mitchell", "Carter"]
+  },
+  "GH": {
+    "firstNames": {
+      "male": ["Kwame", "Kofi", "Kwaku", "Yaw", "Fiifi", "Kwesi", "Kojo", "Kwabena", "Ebo", "Ato", "Nana", "Mensah", "Yeboah", "Agyei", "Boakye", "Osei", "Emmanuel", "Samuel", "Daniel", "Joseph", "Isaac", "Francis", "Prince", "Richard", "Charles", "George", "Peter", "Paul", "Michael", "David", "Anthony", "Stephen", "Felix", "Ernest", "Eric", "Albert", "John", "William", "Henry", "Vincent"],
+      "female": ["Ama", "Akua", "Abena", "Yaa", "Efua", "Esi", "Adjoa", "Akosua", "Aba", "Adwoa", "Afia", "Maame", "Abla", "Araba", "Afua", "Grace", "Comfort", "Mercy", "Patience", "Joyce", "Gloria", "Lucy", "Victoria", "Vivian", "Esther", "Ruth", "Mary", "Elizabeth", "Beatrice", "Felicia", "Gifty", "Sarah", "Rebecca", "Hannah", "Deborah", "Martha", "Priscilla", "Janet", "Agnes", "Rose"],
+      "neutral": ["Nana", "Ama", "Kojo", "Esi", "Kwame"]
+    },
+    "lastNames": ["Mensah", "Owusu", "Boateng", "Osei", "Agyei", "Asante", "Frimpong", "Darko", "Appiah", "Boakye", "Amoah", "Adjei", "Ofori", "Yeboah", "Agyemang", "Amponsah", "Amankwah", "Forson", "Asamoah", "Nyarko", "Sarpong", "Antwi", "Donkor", "Opoku", "Bonsu", "Wiredu", "Gyimah", "Addai", "Acquah", "Acheampong", "Danso", "Ntiamoah", "Obeng", "Asiedu", "Kwarteng", "Prempeh", "Kyei", "Ampofo", "Baah", "Kwofie"]
+  },
+  "UK": {
+    "firstNames": {
+      "male": ["Muhammad", "Noah", "Oliver", "Arthur", "Leo", "George", "Theodore", "Luca", "Oscar", "Jude", "Charlie", "Harry", "Jack", "Thomas", "Archie", "Theo", "Freddie", "Alfie", "Henry", "Finley", "William", "James", "Jacob", "Arlo", "Joshua", "Isaac", "Alexander", "Edward", "Samuel", "Lucas", "Max", "Benjamin", "Mason", "Harrison", "Sebastian", "Ethan", "Adam", "Dylan", "Riley", "Zachary", "Mohammed", "Teddy", "Reuben", "Tommy", "Roman", "Elijah", "Hudson", "Louie", "Reggie", "Ronnie"],
+      "female": ["Olivia", "Amelia", "Lily", "Isla", "Ivy", "Florence", "Freya", "Poppy", "Ava", "Elsie", "Mia", "Sophia", "Charlotte", "Grace", "Ella", "Emily", "Isabella", "Willow", "Evie", "Ruby", "Sophie", "Alice", "Daisy", "Evelyn", "Lucy", "Chloe", "Rosie", "Imogen", "Maisie", "Elizabeth", "Erin", "Hannah", "Isabelle", "Phoebe", "Molly", "Holly", "Matilda", "Scarlett", "Abigail", "Emma", "Zara", "Millie", "Luna", "Harper", "Mila", "Violet", "Aurora", "Bella", "Aria", "Penelope"],
+      "neutral": ["Charlie", "Riley", "Alex", "Jamie", "Jordan", "Morgan", "Taylor", "Casey", "Rowan", "Oakley"]
+    },
+    "lastNames": ["Smith", "Jones", "Taylor", "Brown", "Williams", "Wilson", "Johnson", "Davies", "Robinson", "Wright", "Thompson", "Evans", "Walker", "White", "Roberts", "Green", "Hall", "Wood", "Jackson", "Clarke", "Patel", "Khan", "Lewis", "James", "Phillips", "Mason", "Mitchell", "Carter", "Parker", "Cook", "Bailey", "Cooper", "Richardson", "Cox", "Ward", "King", "Watson", "Baker", "Harrison", "Morgan", "Bell", "Murphy", "Miller", "Davis", "Edwards", "Hughes", "Hill", "Moore", "Clark"]
+  },
+  "NG": {
+    "firstNames": {
+      "male": ["Musa", "Ibrahim", "Abubakar", "Sani", "Mohammed", "Sunday", "Umar", "Emmanuel", "Usman", "Muhammed", "Chukwuemeka", "Oluwaseun", "Adewale", "Ikechukwu", "Babatunde", "Olumide", "Chibueze", "Chinedu", "Tunde", "Kunle", "Femi", "Segun", "Yemi", "Biodun", "Chidi", "Emeka", "Obinna", "Nnamdi", "Ugochukwu", "Ebenezer", "Ayodeji", "Folarin", "Gbenga", "Kelechi", "Nonso", "Onyeka", "Tobi", "Abdul", "Suleiman", "Ahmed", "Yusuf", "Hassan", "Aliyu", "Abdullahi", "Eze", "David", "Joseph", "James", "Daniel", "Samuel"],
+      "female": ["Blessing", "Aisha", "Fatima", "Mary", "Esther", "Grace", "Amina", "Zainab", "Maryam", "Joy", "Chiamaka", "Ngozi", "Adaeze", "Chioma", "Funmilayo", "Adenike", "Oluwatoyin", "Titilayo", "Ifeoma", "Amaka", "Nneka", "Obiageli", "Folake", "Temitope", "Oluwakemi", "Busola", "Chinwe", "Nkechi", "Uchenna", "Chidinma", "Faith", "Mercy", "Peace", "Patience", "Precious", "Gift", "Favour", "Khadija", "Hauwa", "Halima", "Rukayya", "Safiya", "Deborah", "Hannah", "Ruth", "Sarah", "Elizabeth", "Victoria", "Rebecca", "Charity"],
+      "neutral": ["Chidi", "Emeka", "Tunde", "Tobi", "Uche"]
+    },
+    "lastNames": ["Okafor", "Eze", "Nwankwo", "Okonkwo", "Okoli", "Chinwe", "Onyeka", "Adeyemi", "Oluwaseun", "Adeleke", "Afolabi", "Ogunlesi", "Babatunde", "Williams", "Johnson", "Akinola", "Oladipo", "Oyebanji", "Mohammed", "Ibrahim", "Abdullahi", "Bello", "Suleiman", "Yusuf", "Hassan", "Ahmad", "Musa", "Abubakar", "Usman", "Aliyu", "Okeke", "Chukwu", "Anyanwu", "Mgbeahurike", "Obi", "Udeh", "Nwosu", "Ibekwe", "Obinna", "Orji", "Onyekwere", "Ogbonna", "Nnamani", "Ugwu", "Ejiofor", "Ikwuagwu", "Ezeaku", "Nwachukwu", "Okoro", "Dibia"]
+  },
+  "IN": {
+    "firstNames": {
+      "male": ["Shivansh", "Dhruv", "Kabir", "Vedant", "Kiaan", "Aarav", "Arjun", "Viraj", "Krishna", "Avyan", "Vivaan", "Aditya", "Vihaan", "Sai", "Arnav", "Ayaan", "Ishaan", "Shaurya", "Atharv", "Advait", "Pranav", "Ved", "Reyansh", "Aryan", "Rohan", "Rahul", "Raj", "Amit", "Ankit", "Mohit", "Nikhil", "Varun", "Sahil", "Akash", "Vikram", "Sameer", "Abhinav", "Karan", "Manish", "Ravi", "Sanjay", "Suresh", "Dinesh", "Mahesh", "Yash", "Harsh", "Dev", "Om", "Shiv", "Ram"],
+      "female": ["Aditi", "Inaya", "Aarya", "Kiara", "Aadhya", "Vamika", "Pari", "Jiya", "Mehar", "Amayra", "Saanvi", "Diya", "Pihu", "Ananya", "Navya", "Angel", "Anika", "Avni", "Sara", "Myra", "Ira", "Riya", "Priya", "Nisha", "Meera", "Anjali", "Kavya", "Neha", "Pooja", "Shreya", "Divya", "Sneha", "Swati", "Ritika", "Simran", "Tanvi", "Ishita", "Sakshi", "Madhuri", "Deepika", "Asha", "Suman", "Rekha", "Sunita", "Kamala", "Lakshmi", "Disha", "Siya", "Aisha", "Tara"],
+      "neutral": ["Arya", "Ananya", "Kabir", "Navya", "Reyansh"]
+    },
+    "lastNames": ["Kumar", "Sharma", "Singh", "Patel", "Gupta", "Reddy", "Verma", "Jain", "Mehta", "Agarwal", "Shah", "Desai", "Rao", "Iyer", "Nair", "Menon", "Chopra", "Kapoor", "Malhotra", "Khanna", "Bhatia", "Sethi", "Arora", "Banerjee", "Chatterjee", "Mukherjee", "Das", "Ghosh", "Roy", "Bose", "Dutta", "Khan", "Ahmed", "Ali", "Hussain", "Rahman", "Siddiqui", "Ansari", "Qureshi", "Sheikh", "Pillai", "Krishnan", "Narayanan", "Subramaniam", "Venkatesh", "Ramesh", "Narayan", "Pandit", "Mishra", "Tiwari"]
+  },
+  "CA": {
+    "firstNames": {
+      "male": ["Noah", "Liam", "Theodore", "Leo", "William", "Oliver", "Lucas", "James", "Benjamin", "Thomas", "Ethan", "Mason", "Logan", "Jackson", "Jacob", "Alexander", "Michael", "Owen", "Nathan", "Jack", "Daniel", "Henry", "Matthew", "Samuel", "Adam", "Connor", "Ryan", "Hudson", "Levi", "Sebastian", "Charles", "Wyatt", "Carter", "Julian", "Luke", "Isaac", "Gabriel", "Anthony", "Dylan", "Lincoln", "Joshua", "Elijah", "Grayson", "Asher", "Maverick", "Wyatt", "Caleb", "Nolan", "Aiden", "Harrison", "Ezra"],
+      "female": ["Olivia", "Charlotte", "Emma", "Amelia", "Sophia", "Sofia", "Mia", "Chloe", "Lily", "Ava", "Isabella", "Evelyn", "Harper", "Camila", "Abigail", "Emily", "Elizabeth", "Avery", "Ella", "Scarlett", "Grace", "Victoria", "Riley", "Aria", "Aubrey", "Zoey", "Penelope", "Lillian", "Addison", "Layla", "Natalie", "Hannah", "Brooklyn", "Zoe", "Nora", "Lucy", "Claire", "Ellie", "Stella", "Hazel", "Isla", "Violet", "Aurora", "Willow", "Luna", "Maya", "Eleanor", "Madison", "Paisley", "Nova"],
+      "neutral": ["Riley", "Charlie", "Avery", "Jordan", "Taylor", "Morgan", "Alex", "Quinn", "Sage", "River"]
+    },
+    "lastNames": ["Smith", "Brown", "Tremblay", "Martin", "Roy", "Wilson", "McDonald", "Johnson", "Lee", "Williams", "Taylor", "Anderson", "White", "Jones", "Thompson", "Campbell", "Clark", "Scott", "Walker", "Robinson", "Young", "King", "Wright", "Harris", "Davies", "Lewis", "Hill", "Moore", "Jackson", "Stewart", "Mitchell", "Roberts", "Carter", "Phillips", "Evans", "Turner", "Collins", "Edwards", "Parker", "Murphy", "Cook", "Rogers", "Morgan", "Peterson", "Cooper", "Reed", "Bailey", "Bell", "Gomez", "Kelly"]
+  }
+}

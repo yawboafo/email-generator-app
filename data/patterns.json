@@ -1,0 +1,54 @@
+{
+  "petNames": [
+    "luna", "charlie", "max", "bella", "daisy", "cooper", "lucy", "teddy", "bear", "buddy",
+    "coco", "duke", "bailey", "rocky", "molly", "sadie", "oliver", "penny", "zeus", "ruby",
+    "jack", "lola", "murphy", "chloe", "leo", "sophie", "milo", "rosie", "simba", "zoe",
+    "jasper", "stella", "toby", "willow", "oscar", "maya", "blue", "shadow", "pepper", "nala",
+    "finn", "lily", "winston", "gracie", "bentley", "maggie", "gus", "ella", "tucker", "zoey",
+    "sam", "poppy", "buster", "piper", "diesel", "hazel", "jake", "luna", "louie", "ellie",
+    "ace", "ginger", "apollo", "belle", "zeus", "millie", "scout", "roxy", "hank", "coco",
+    "bruno", "lulu", "koda", "mia", "copper", "honey", "moose", "sasha", "bandit", "minnie",
+    "dexter", "princess", "archie", "ivy", "rex", "abby", "cash", "angel", "king", "harley",
+    "ranger", "luna", "gunner", "athena", "boomer", "penny", "maverick", "luna", "rocky", "bailey"
+  ],
+  "cities": [
+    "newyork", "london", "tokyo", "paris", "berlin", "sydney", "toronto", "miami", "chicago", "austin",
+    "boston", "seattle", "denver", "atlanta", "dallas", "houston", "phoenix", "portland", "vegas", "oakland",
+    "brooklyn", "manhattan", "queens", "bronx", "chelsea", "soho", "oxford", "cambridge", "manchester", "liverpool",
+    "accra", "lagos", "nairobi", "capetown", "cairo", "mumbai", "delhi", "bangalore", "chennai", "kolkata",
+    "rome", "madrid", "barcelona", "milan", "amsterdam", "brussels", "vienna", "prague", "dublin", "edinburgh",
+    "singapore", "dubai", "hongkong", "seoul", "beijing", "shanghai", "bangkok", "jakarta", "manila", "hanoi",
+    "moscow", "stockholm", "copenhagen", "helsinki", "oslo", "lisbon", "athens", "istanbul", "warsaw", "budapest",
+    "vancouver", "montreal", "calgary", "ottawa", "quebec", "melbourne", "perth", "brisbane", "auckland", "wellington"
+  ],
+  "hobbies": [
+    "gamer", "artist", "writer", "coder", "chef", "runner", "swimmer", "cyclist", "hiker", "climber",
+    "reader", "blogger", "vlogger", "streamer", "photographer", "filmmaker", "musician", "dancer", "singer", "rapper",
+    "painter", "designer", "builder", "maker", "traveler", "explorer", "adventurer", "foodie", "techie", "geek",
+    "nerd", "bookworm", "cinephile", "audiophile", "fashionista", "yogi", "athlete", "player", "champion", "pro",
+    "gardener", "fisher", "hunter", "camper", "surfer", "skier", "snowboarder", "skater", "biker", "diver",
+    "sailor", "pilot", "driver", "racer", "coach", "trainer", "teacher", "mentor", "leader", "developer",
+    "animator", "editor", "producer", "director", "actor", "model", "influencer", "creator", "entrepreneur", "founder",
+    "investor", "trader", "analyst", "consultant", "advisor", "strategist", "planner", "organizer", "coordinator", "manager"
+  ],
+  "adjectives": [
+    "cool", "super", "mega", "ultra", "happy", "lucky", "sunny", "bright", "wild", "free",
+    "smart", "swift", "quick", "fast", "strong", "brave", "bold", "epic", "great", "mighty",
+    "royal", "noble", "golden", "silver", "diamond", "star", "cosmic", "lunar", "solar", "fire",
+    "ice", "storm", "thunder", "lightning", "mystic", "magic", "dream", "wonder", "pure", "true"
+  ],
+  "things": [
+    "star", "moon", "sun", "sky", "cloud", "wave", "ocean", "river", "mountain", "forest",
+    "tiger", "lion", "eagle", "hawk", "wolf", "dragon", "phoenix", "unicorn", "ninja", "samurai",
+    "knight", "king", "queen", "prince", "princess", "angel", "demon", "ghost", "spirit", "soul",
+    "heart", "mind", "dream", "wish", "hope", "faith", "love", "peace", "power", "force"
+  ],
+  "colors": [
+    "red", "blue", "green", "yellow", "purple", "pink", "orange", "black", "white", "gray",
+    "silver", "gold", "crimson", "azure", "jade", "amber", "violet", "rose", "ebony", "ivory"
+  ],
+  "years": [
+    "1990", "1991", "1992", "1993", "1994", "1995", "1996", "1997", "1998", "1999",
+    "2000", "2001", "2002", "2003", "2004", "2005", "2006", "2007", "2008", "2009"
+  ]
+}

@@ -1,65 +1,356 @@
-import Image from "next/image";
+'use client';
+
+import { useState, useEffect } from 'react';
+import EmailForm from '@/components/EmailForm';
+import EmailResults from '@/components/EmailResults';
+import SaveEmailsModal from '@/components/SaveEmailsModal';
+import SavedEmailsList from '@/components/SavedEmailsList';
+import LoginScreen from '@/components/LoginScreen';
+import { SavedEmailBatch, Country, NamePattern } from '@/types';
+import { saveEmailBatch, getSavedEmailBatches } from '@/lib/storage';
 
 export default function Home() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [emails, setEmails] = useState<string[]>([]);
+  const [meta, setMeta] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<'generate' | 'send' | 'verify' | 'saved'>('generate');
+  const [showSaveModal, setShowSaveModal] = useState(false);
+  const [savedBatchCount, setSavedBatchCount] = useState(0);
+  const [sendRecipients, setSendRecipients] = useState('');
+  const [verifyEmails, setVerifyEmails] = useState('');
+  const [currentGenerationParams, setCurrentGenerationParams] = useState<{
+    country: Country;
+    pattern: NamePattern;
+    providers: string[];
+  } | null>(null);
+
+  useEffect(() => {
+    setSavedBatchCount(getSavedEmailBatches().length);
+  }, []);
+
+  const handleLogin = () => {
+    setIsAuthenticated(true);
+  };
+
+  const handleGenerate = (generatedEmails: string[], generatedMeta: any, params?: any) => {
+    setEmails(generatedEmails);
+    setMeta(generatedMeta);
+    if (params) {
+      setCurrentGenerationParams({
+        country: params.country,
+        pattern: params.pattern,
+        providers: params.providers,
+      });
+    }
+  };
+
+  const handleSaveBatch = (name: string) => {
+    if (emails.length === 0 || !currentGenerationParams) return;
+    
+    saveEmailBatch(
+      name,
+      emails,
+      currentGenerationParams.providers,
+      currentGenerationParams.country,
+      currentGenerationParams.pattern
+    );
+    
+    setSavedBatchCount(getSavedEmailBatches().length);
+    alert(`Successfully saved ${emails.length.toLocaleString()} emails!`);
+  };
+
+  const handleImportToSend = (batch: SavedEmailBatch) => {
+    setSendRecipients(batch.emails.join(', '));
+    setActiveTab('send');
+    alert(`Imported ${batch.count.toLocaleString()} emails to Send tab`);
+  };
+
+  const handleImportToVerify = (batch: SavedEmailBatch) => {
+    setVerifyEmails(batch.emails.join('\n'));
+    setActiveTab('verify');
+    alert(`Imported ${batch.count.toLocaleString()} emails to Verify tab`);
+  };
+
+  const refreshSavedCount = () => {
+    setSavedBatchCount(getSavedEmailBatches().length);
+  };
+
+  // Show login screen if not authenticated
+  if (!isAuthenticated) {
+    return <LoginScreen onLogin={handleLogin} />;
+  }
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+    <main className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">
+            The Second Coming
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+
+        {/* Navigation Tabs */}
+        <div className="flex justify-center mb-6">
+          <div className="inline-flex bg-white rounded-lg shadow-md p-1">
+            <button
+              onClick={() => setActiveTab('generate')}
+              className={`px-6 py-2 rounded-md font-medium transition-colors ${
+                activeTab === 'generate'
+                  ? 'bg-blue-600 text-white'
+                  : 'text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              Generate Emails
+            </button>
+            <button
+              onClick={() => setActiveTab('send')}
+              className={`px-6 py-2 rounded-md font-medium transition-colors ${
+                activeTab === 'send'
+                  ? 'bg-blue-600 text-white'
+                  : 'text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              Send Emails
+            </button>
+            <button
+              onClick={() => setActiveTab('verify')}
+              className={`px-6 py-2 rounded-md font-medium transition-colors ${
+                activeTab === 'verify'
+                  ? 'bg-blue-600 text-white'
+                  : 'text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              Verify Emails
+            </button>
+            <button
+              onClick={() => setActiveTab('saved')}
+              className={`px-6 py-2 rounded-md font-medium transition-colors relative ${
+                activeTab === 'saved'
+                  ? 'bg-blue-600 text-white'
+                  : 'text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              Saved Emails
+              {savedBatchCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                  {savedBatchCount}
+                </span>
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* Main Content */}
+        {activeTab === 'generate' && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Form Section */}
+            <div>
+              <EmailForm 
+                onGenerate={handleGenerate} 
+                isLoading={isLoading}
+                setIsLoading={setIsLoading}
+              />
+            </div>
+
+            {/* Results Section */}
+            <div>
+              <EmailResults 
+                emails={emails} 
+                meta={meta || { count: 0, providersUsed: [] }} 
+                onSave={() => setShowSaveModal(true)}
+              />
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'send' && (
+          <div className="max-w-4xl mx-auto">
+            <div className="bg-white p-8 rounded-lg shadow-md">
+              <div className="flex justify-between items-center mb-4">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-800">Send Emails</h2>
+                  <p className="text-gray-600 mt-1">Configure and send emails to your generated addresses.</p>
+                </div>
+                <button
+                  onClick={() => setActiveTab('saved')}
+                  className="flex items-center space-x-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md transition duration-200 font-semibold"
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                  </svg>
+                  <span>Import Saved Emails</span>
+                </button>
+              </div>
+              
+              <div className="space-y-4">
+                <div>
+                  <label htmlFor="fromEmail" className="block text-sm font-medium text-gray-900 mb-2">
+                    From Email
+                  </label>
+                  <input
+                    type="email"
+                    id="fromEmail"
+                    placeholder="sender@example.com"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white placeholder-gray-400"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="subject" className="block text-sm font-medium text-gray-900 mb-2">
+                    Subject
+                  </label>
+                  <input
+                    type="text"
+                    id="subject"
+                    placeholder="Email subject"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white placeholder-gray-400"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="message" className="block text-sm font-medium text-gray-900 mb-2">
+                    Message
+                  </label>
+                  <textarea
+                    id="message"
+                    rows={6}
+                    placeholder="Your email message..."
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white placeholder-gray-400"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="recipients" className="block text-sm font-medium text-gray-900 mb-2">
+                    Recipients (comma-separated)
+                  </label>
+                  <textarea
+                    id="recipients"
+                    value={sendRecipients}
+                    onChange={(e) => setSendRecipients(e.target.value)}
+                    rows={4}
+                    placeholder="email1@example.com, email2@example.com"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white placeholder-gray-400"
+                  />
+                  {sendRecipients && (
+                    <p className="text-sm text-gray-600 mt-1">
+                      {sendRecipients.split(',').filter(e => e.trim()).length} recipients
+                    </p>
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-md transition duration-200"
+                >
+                  Send Emails
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'verify' && (
+          <div className="max-w-4xl mx-auto">
+            <div className="bg-white p-8 rounded-lg shadow-md">
+              <div className="flex justify-between items-center mb-4">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-800">Verify Emails</h2>
+                  <p className="text-gray-600 mt-1">Check if email addresses are valid and deliverable.</p>
+                </div>
+                <button
+                  onClick={() => setActiveTab('saved')}
+                  className="flex items-center space-x-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md transition duration-200 font-semibold"
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                  </svg>
+                  <span>Import Saved Emails</span>
+                </button>
+              </div>
+              
+              <div className="space-y-4">
+                <div>
+                  <label htmlFor="emailsToVerify" className="block text-sm font-medium text-gray-900 mb-2">
+                    Email Addresses to Verify (one per line)
+                  </label>
+                  <textarea
+                    id="emailsToVerify"
+                    value={verifyEmails}
+                    onChange={(e) => setVerifyEmails(e.target.value)}
+                    rows={10}
+                    placeholder="email1@example.com
+email2@example.com
+email3@example.com"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white placeholder-gray-400 font-mono"
+                  />
+                  {verifyEmails && (
+                    <p className="text-sm text-gray-600 mt-1">
+                      {verifyEmails.split('\n').filter(e => e.trim()).length} emails to verify
+                    </p>
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-md transition duration-200"
+                >
+                  Verify Emails
+                </button>
+
+                <div className="mt-6 border-t pt-4">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-3">Verification Results</h3>
+                  <div className="bg-gray-50 rounded-lg p-4 text-center text-gray-500">
+                    No results yet. Enter emails above and click Verify.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'saved' && (
+          <div className="max-w-6xl mx-auto">
+            <SavedEmailsList 
+              onImport={(batch) => {
+                // Show import options
+                const choice = confirm(`Import "${batch.name}" (${batch.count.toLocaleString()} emails) to:\n\nOK = Send Emails tab\nCancel = Verify Emails tab`);
+                if (choice) {
+                  handleImportToSend(batch);
+                } else {
+                  handleImportToVerify(batch);
+                }
+              }}
+              onRefresh={refreshSavedCount}
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+          </div>
+        )}
+
+        {/* Footer */}
+        <footer className="mt-12 text-center text-sm text-gray-600">
+          <div className="bg-white rounded-lg p-4 shadow-sm">
+            <p className="font-semibold mb-2">Email Management Suite</p>
+            <p className="mb-1">
+              Generate, send, and verify email addresses efficiently.
+            </p>
+            <p>
+              Use responsibly and in compliance with applicable laws.
+            </p>
+          </div>
+          <p className="mt-4 text-gray-500">
+            Built with Next.js, TypeScript, and Tailwind CSS
+          </p>
+        </footer>
+      </div>
+
+      {/* Save Modal */}
+      <SaveEmailsModal
+        isOpen={showSaveModal}
+        onClose={() => setShowSaveModal(false)}
+        onSave={handleSaveBatch}
+        emailCount={emails.length}
+      />
+    </main>
   );
 }

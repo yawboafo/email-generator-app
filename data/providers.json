@@ -1,0 +1,44 @@
+[
+  {
+    "id": "gmail",
+    "name": "Gmail",
+    "domain": "gmail.com",
+    "popularity": 45
+  },
+  {
+    "id": "yahoo",
+    "name": "Yahoo",
+    "domain": "yahoo.com",
+    "popularity": 20
+  },
+  {
+    "id": "outlook",
+    "name": "Outlook",
+    "domain": "outlook.com",
+    "popularity": 15
+  },
+  {
+    "id": "hotmail",
+    "name": "Hotmail",
+    "domain": "hotmail.com",
+    "popularity": 10
+  },
+  {
+    "id": "icloud",
+    "name": "iCloud",
+    "domain": "icloud.com",
+    "popularity": 5
+  },
+  {
+    "id": "proton",
+    "name": "Proton Mail",
+    "domain": "proton.me",
+    "popularity": 3
+  },
+  {
+    "id": "aol",
+    "name": "AOL",
+    "domain": "aol.com",
+    "popularity": 2
+  }
+]
