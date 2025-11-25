@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import EmailForm from '@/components/EmailForm';
+import AIEmailGenerator from '@/components/AIEmailGenerator';
 import EmailResults from '@/components/EmailResults';
 import SaveEmailsModal from '@/components/SaveEmailsModal';
 import SavedEmailsList from '@/components/SavedEmailsList';
@@ -15,6 +16,7 @@ export default function Home() {
   const [meta, setMeta] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'generate' | 'send' | 'verify' | 'saved'>('generate');
+  const [generatorMode, setGeneratorMode] = useState<'standard' | 'ai'>('standard');
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [savedBatchCount, setSavedBatchCount] = useState(0);
   const [sendRecipients, setSendRecipients] = useState('');
@@ -38,9 +40,16 @@ export default function Home() {
     setMeta(generatedMeta);
     if (params) {
       setCurrentGenerationParams({
-        country: params.country,
-        pattern: params.pattern,
-        providers: params.providers,
+        country: params.country || 'US',
+        pattern: params.pattern || 'firstname.lastname',
+        providers: params.providers || [],
+      });
+    } else if (generatedMeta.mode === 'ai') {
+      // For AI mode, we don't have traditional params, so use defaults
+      setCurrentGenerationParams({
+        country: 'US',
+        pattern: 'firstname.lastname',
+        providers: generatedMeta.patterns || [],
       });
     }
   };
@@ -144,23 +153,62 @@ export default function Home() {
 
         {/* Main Content */}
         {activeTab === 'generate' && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Form Section */}
-            <div>
-              <EmailForm 
-                onGenerate={handleGenerate} 
-                isLoading={isLoading}
-                setIsLoading={setIsLoading}
-              />
+          <div>
+            {/* Generator Mode Toggle */}
+            <div className="flex justify-center mb-6">
+              <div className="inline-flex bg-white rounded-lg shadow-md p-1 border-2 border-purple-300">
+                <button
+                  onClick={() => setGeneratorMode('standard')}
+                  className={`px-6 py-2 rounded-md font-medium transition-all ${
+                    generatorMode === 'standard'
+                      ? 'bg-blue-600 text-white shadow-md'
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  📋 Standard Generator
+                </button>
+                <button
+                  onClick={() => setGeneratorMode('ai')}
+                  className={`px-6 py-2 rounded-md font-medium transition-all flex items-center gap-2 ${
+                    generatorMode === 'ai'
+                      ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-md'
+                      : 'text-gray-700 hover:bg-purple-50'
+                  }`}
+                >
+                  🤖 AI Generator
+                  <span className="text-xs bg-yellow-400 text-purple-900 px-2 py-0.5 rounded-full font-bold">
+                    NEW
+                  </span>
+                </button>
+              </div>
             </div>
 
-            {/* Results Section */}
-            <div>
-              <EmailResults 
-                emails={emails} 
-                meta={meta || { count: 0, providersUsed: [] }} 
-                onSave={() => setShowSaveModal(true)}
-              />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Form Section */}
+              <div>
+                {generatorMode === 'standard' ? (
+                  <EmailForm 
+                    onGenerate={handleGenerate} 
+                    isLoading={isLoading}
+                    setIsLoading={setIsLoading}
+                  />
+                ) : (
+                  <AIEmailGenerator 
+                    onGenerate={handleGenerate} 
+                    isLoading={isLoading}
+                    setIsLoading={setIsLoading}
+                  />
+                )}
+              </div>
+
+              {/* Results Section */}
+              <div>
+                <EmailResults 
+                  emails={emails} 
+                  meta={meta || { count: 0, providersUsed: [] }} 
+                  onSave={() => setShowSaveModal(true)}
+                />
+              </div>
             </div>
           </div>
         )}
