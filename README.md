@@ -1,24 +1,55 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Email Generator App 🌍
 
-## Getting Started
+An advanced AI-powered email generator with **global coverage of 50+ countries**, supporting authentic names from every continent. Generate ultra-realistic emails for any profession and nationality combination.
 
-First, run the development server:
+## 🌟 Features
+
+- **🤖 AI Email Generator**: Natural language prompts to generate contextual emails
+- **🌍 50+ Countries**: Authentic names from US, UK, Canada, France, Germany, Japan, Brazil, Australia, and 40+ more
+- **👔 10+ Professions**: Specialized patterns for bankers, doctors, lawyers, engineers, developers, and more
+- **⚡ High Performance**: Optimized for Vercel with lazy loading and efficient data structures
+- **📊 Batch Generation**: Generate up to 500,000 emails in a single request
+- **💾 Save & Export**: Save batches and export to CSV
+- **🎨 Modern UI**: Beautiful gradients with intuitive interface
+
+## 🚀 Quick Start
+
+### Development
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) to see the app.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Deploy to Vercel
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/yawboafo/email-generator-app)
+
+The easiest way to deploy is using [Vercel Platform](https://vercel.com/new):
+
+1. Push your code to GitHub
+2. Import your repository in Vercel
+3. Vercel will auto-detect Next.js and deploy
+4. Your app is live! 🎉
+
+## 📦 Technologies
+
+- **Next.js 16** - React framework with App Router
+- **TypeScript** - Type-safe development
+- **Tailwind CSS** - Utility-first styling
+- **Vercel** - Optimized hosting platform
+
+## 🌐 Global Coverage
+
+Supports authentic names from **50+ countries** including:
+- 🌍 **Africa**: Ghana, Nigeria, Kenya, South Africa, Egypt, Morocco
+- 🌎 **Americas**: USA, Canada, Mexico, Brazil, Argentina, Chile, Colombia
+- 🌏 **Asia**: India, Japan, China, South Korea, Thailand, Vietnam, Philippines
+- 🇪🇺 **Europe**: UK, France, Germany, Italy, Spain, Netherlands, Sweden, Russia
+- 🌏 **Middle East**: UAE, Saudi Arabia, Israel
+- 🌏 **Oceania**: Australia, New Zealand
 
 ## Learn More
 

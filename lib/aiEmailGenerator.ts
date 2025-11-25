@@ -140,58 +140,113 @@ const PROFESSION_PATTERNS = {
 
 /**
  * Country/nationality detection and name data mapping
+ * Supports 50+ countries globally
  */
 const NATIONALITY_MAP: Record<string, string> = {
-  'ghanaian': 'GH',
-  'ghana': 'GH',
-  'ghanaians': 'GH',
-  'nigerian': 'NG',
-  'nigeria': 'NG',
-  'nigerians': 'NG',
-  'american': 'US',
-  'usa': 'US',
-  'americans': 'US',
-  'united states': 'US',
-  'british': 'UK',
-  'uk': 'UK',
-  'england': 'UK',
-  'english': 'UK',
-  'indian': 'IN',
-  'india': 'IN',
-  'indians': 'IN',
-  'canadian': 'CA',
-  'canada': 'CA',
-  'canadians': 'CA',
-  'australian': 'AU',
-  'australia': 'AU',
-  'australians': 'AU',
-  'aussie': 'AU',
-  'aussies': 'AU',
-  'brazilian': 'BR',
-  'brazil': 'BR',
-  'brazilians': 'BR',
-  'mexican': 'MX',
-  'mexico': 'MX',
-  'mexicans': 'MX',
-  'french': 'FR',
-  'france': 'FR',
-  'german': 'DE',
-  'germany': 'DE',
-  'germans': 'DE',
-  'japanese': 'JP',
-  'japan': 'JP',
-  'south african': 'ZA',
-  'south africa': 'ZA',
-  'kenyan': 'KE',
-  'kenya': 'KE',
-  'kenyans': 'KE',
+  // Africa
+  'ghanaian': 'GH', 'ghana': 'GH', 'ghanaians': 'GH',
+  'nigerian': 'NG', 'nigeria': 'NG', 'nigerians': 'NG',
+  'south african': 'ZA', 'south africa': 'ZA', 'south africans': 'ZA',
+  'kenyan': 'KE', 'kenya': 'KE', 'kenyans': 'KE',
+  'egyptian': 'EG', 'egypt': 'EG', 'egyptians': 'EG',
+  'moroccan': 'MA', 'morocco': 'MA', 'moroccans': 'MA',
+  
+  // Americas
+  'american': 'US', 'usa': 'US', 'americans': 'US', 'united states': 'US',
+  'canadian': 'CA', 'canada': 'CA', 'canadians': 'CA',
+  'mexican': 'MX', 'mexico': 'MX', 'mexicans': 'MX',
+  'brazilian': 'BR', 'brazil': 'BR', 'brazilians': 'BR',
+  'argentinian': 'AR', 'argentina': 'AR', 'argentinians': 'AR', 'argentine': 'AR',
+  'chilean': 'CL', 'chile': 'CL', 'chileans': 'CL',
+  'colombian': 'CO', 'colombia': 'CO', 'colombians': 'CO',
+  'peruvian': 'PE', 'peru': 'PE', 'peruvians': 'PE',
+  'venezuelan': 'VE', 'venezuela': 'VE', 'venezuelans': 'VE',
+  
+  // Europe - Western
+  'british': 'UK', 'uk': 'UK', 'england': 'UK', 'english': 'UK',
+  'french': 'FR', 'france': 'FR',
+  'german': 'DE', 'germany': 'DE', 'germans': 'DE',
+  'italian': 'IT', 'italy': 'IT', 'italians': 'IT',
+  'spanish': 'ES', 'spain': 'ES', 'spaniards': 'ES',
+  'dutch': 'NL', 'netherlands': 'NL', 'holland': 'NL',
+  'belgian': 'BE', 'belgium': 'BE', 'belgians': 'BE',
+  'swiss': 'CH', 'switzerland': 'CH',
+  'austrian': 'AT', 'austria': 'AT', 'austrians': 'AT',
+  'portuguese': 'PT', 'portugal': 'PT',
+  'irish': 'IE', 'ireland': 'IE',
+  
+  // Europe - Northern
+  'swedish': 'SE', 'sweden': 'SE', 'swedes': 'SE',
+  'norwegian': 'NO', 'norway': 'NO', 'norwegians': 'NO',
+  'danish': 'DK', 'denmark': 'DK', 'danes': 'DK',
+  'finnish': 'FI', 'finland': 'FI', 'finns': 'FI',
+  
+  // Europe - Eastern
+  'polish': 'PL', 'poland': 'PL', 'poles': 'PL',
+  'czech': 'CZ', 'czechia': 'CZ', 'czech republic': 'CZ',
+  'russian': 'RU', 'russia': 'RU', 'russians': 'RU',
+  'ukrainian': 'UA', 'ukraine': 'UA', 'ukrainians': 'UA',
+  'greek': 'GR', 'greece': 'GR', 'greeks': 'GR',
+  'turkish': 'TR', 'turkey': 'TR', 'turks': 'TR',
+  
+  // Asia - East
+  'japanese': 'JP', 'japan': 'JP',
+  'korean': 'KR', 'south korea': 'KR', 'south korean': 'KR',
+  'chinese': 'CN', 'china': 'CN',
+  
+  // Asia - Southeast
+  'thai': 'TH', 'thailand': 'TH',
+  'vietnamese': 'VN', 'vietnam': 'VN',
+  'filipino': 'PH', 'philippines': 'PH', 'filipinos': 'PH',
+  'indonesian': 'ID', 'indonesia': 'ID', 'indonesians': 'ID',
+  'malaysian': 'MY', 'malaysia': 'MY', 'malaysians': 'MY',
+  'singaporean': 'SG', 'singapore': 'SG', 'singaporeans': 'SG',
+  
+  // Asia - South
+  'indian': 'IN', 'india': 'IN', 'indians': 'IN',
+  
+  // Middle East
+  'israeli': 'IL', 'israel': 'IL', 'israelis': 'IL',
+  'emirati': 'AE', 'uae': 'AE', 'dubai': 'AE', 'emiratis': 'AE',
+  'saudi': 'SA', 'saudi arabia': 'SA', 'saudi arabian': 'SA', 'saudis': 'SA',
+  
+  // Oceania
+  'australian': 'AU', 'australia': 'AU', 'australians': 'AU', 'aussie': 'AU', 'aussies': 'AU',
+  'new zealand': 'NZ', 'new zealander': 'NZ', 'kiwi': 'NZ', 'kiwis': 'NZ',
 };
 
-import namesData from '@/data/names.json';
-import additionalNamesData from '@/data/additional-names.json';
+// Lazy load name data to reduce initial bundle size
+let nameDataCache: any = null;
 
-// Merge both name datasets
-const allNamesData = { ...namesData, ...additionalNamesData };
+async function loadNameData() {
+  if (nameDataCache) return nameDataCache;
+  
+  // Load all name datasets dynamically
+  const [base, additional, world] = await Promise.all([
+    import('@/data/names.json'),
+    import('@/data/additional-names.json'),
+    import('@/data/world-names.json')
+  ]);
+  
+  nameDataCache = {
+    ...base.default,
+    ...additional.default,
+    ...world.default
+  };
+  
+  return nameDataCache;
+}
+
+// For SSR compatibility, try to load synchronously first
+let allNamesData: any = {};
+try {
+  const namesData = require('@/data/names.json');
+  const additionalNamesData = require('@/data/additional-names.json');
+  const worldNamesData = require('@/data/world-names.json');
+  allNamesData = { ...namesData, ...additionalNamesData, ...worldNamesData };
+} catch (e) {
+  // Will be loaded dynamically in client
+}
 
 /**
  * Get names from specific country
@@ -534,6 +589,11 @@ export async function aiEmailGenerator({
     providers = DEFAULT_PROVIDERS;
   }
   
+  // Load name data if not already loaded (for client-side)
+  if (Object.keys(allNamesData).length === 0) {
+    allNamesData = await loadNameData();
+  }
+  
   // Parse the prompt to understand context
   const context = parsePrompt(prompt);
   
@@ -593,5 +653,39 @@ export const EXAMPLE_PROMPTS = [
   "Generate emails for German accountants",
   "Create emails for Mexican students",
   "Make emails for South African lawyers",
-  "Generate emails for Kenyan entrepreneurs"
+  "Generate emails for Italian designers",
+  "Create emails for Spanish entrepreneurs",
+  "Make emails for Dutch developers",
+  "Generate emails for Swedish doctors",
+  "Create emails for Russian engineers",
+  "Create emails for Korean students",
+  "Generate emails for Thai lawyers"
 ];
+
+/**
+ * Get list of all supported countries
+ */
+export function getSupportedCountries(): Array<{ code: string; name: string }> {
+  const countries = new Map<string, string>();
+  
+  // Extract unique countries from NATIONALITY_MAP
+  Object.values(NATIONALITY_MAP).forEach(code => {
+    if (!countries.has(code)) {
+      // Get country name from first matching key
+      const name = Object.entries(NATIONALITY_MAP)
+        .find(([_, c]) => c === code)?.[0] || code;
+      countries.set(code, name.charAt(0).toUpperCase() + name.slice(1));
+    }
+  });
+  
+  return Array.from(countries.entries())
+    .map(([code, name]) => ({ code, name }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+/**
+ * Get total count of supported countries
+ */
+export function getSupportedCountriesCount(): number {
+  return new Set(Object.values(NATIONALITY_MAP)).size;
+}

@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { EXAMPLE_PROMPTS } from '@/lib/aiEmailGenerator';
+import { useState, useEffect } from 'react';
+import { EXAMPLE_PROMPTS, getSupportedCountriesCount } from '@/lib/aiEmailGenerator';
 import providers from '@/data/providers.json';
 
 interface AIEmailGeneratorProps {
@@ -16,8 +16,13 @@ export default function AIEmailGenerator({ onGenerate, isLoading, setIsLoading }
   const [selectedProviders, setSelectedProviders] = useState<string[]>(['gmail.com', 'yahoo.com', 'outlook.com']);
   const [error, setError] = useState<string>('');
   const [showExamples, setShowExamples] = useState<boolean>(false);
+  const [countriesCount, setCountriesCount] = useState<number>(0);
 
   const providerList = providers as Array<{ id: string; name: string; domain: string }>;
+
+  useEffect(() => {
+    setCountriesCount(getSupportedCountriesCount());
+  }, []);
 
   const handleProviderToggle = (domain: string) => {
     setSelectedProviders(prev => 
@@ -102,13 +107,24 @@ export default function AIEmailGenerator({ onGenerate, isLoading, setIsLoading }
         </span>
       </div>
 
+      {/* Global Coverage Stats */}
+      <div className="bg-gradient-to-r from-purple-600 to-blue-600 p-4 rounded-lg text-white">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-2xl font-bold">{countriesCount}+ Countries</p>
+            <p className="text-sm opacity-90">Global name database with authentic names from every continent</p>
+          </div>
+          <div className="text-4xl">🌍</div>
+        </div>
+      </div>
+
       <div className="bg-white p-4 rounded-lg border border-purple-200">
         <p className="text-sm text-gray-700 mb-2">
           ✨ Describe the type of emails you want, and our AI will generate ultra-realistic emails using advanced patterns, 
           alphabets, numbers, and special characters.
         </p>
         <p className="text-xs text-purple-600 font-medium">
-          Example: "Generate professional emails for tech developers" or "Create casual emails for young gamers"
+          Example: "Generate emails for French bankers" or "Create emails for Japanese developers"
         </p>
       </div>
       
