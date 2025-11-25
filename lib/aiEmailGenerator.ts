@@ -162,18 +162,45 @@ const NATIONALITY_MAP: Record<string, string> = {
   'canadian': 'CA',
   'canada': 'CA',
   'canadians': 'CA',
+  'australian': 'AU',
+  'australia': 'AU',
+  'australians': 'AU',
+  'aussie': 'AU',
+  'aussies': 'AU',
+  'brazilian': 'BR',
+  'brazil': 'BR',
+  'brazilians': 'BR',
+  'mexican': 'MX',
+  'mexico': 'MX',
+  'mexicans': 'MX',
+  'french': 'FR',
+  'france': 'FR',
+  'german': 'DE',
+  'germany': 'DE',
+  'germans': 'DE',
+  'japanese': 'JP',
+  'japan': 'JP',
+  'south african': 'ZA',
+  'south africa': 'ZA',
+  'kenyan': 'KE',
+  'kenya': 'KE',
+  'kenyans': 'KE',
 };
 
 import namesData from '@/data/names.json';
+import additionalNamesData from '@/data/additional-names.json';
+
+// Merge both name datasets
+const allNamesData = { ...namesData, ...additionalNamesData };
 
 /**
  * Get names from specific country
  */
 function getNamesForCountry(countryCode: string): { firstNames: string[]; lastNames: string[] } {
-  const countryData = (namesData as any)[countryCode];
+  const countryData = (allNamesData as any)[countryCode];
   if (!countryData) {
     // Fallback to US names
-    const usData = (namesData as any)['US'];
+    const usData = (allNamesData as any)['US'];
     return {
       firstNames: [...usData.firstNames.male, ...usData.firstNames.female, ...usData.firstNames.neutral],
       lastNames: usData.lastNames
@@ -559,8 +586,12 @@ export const EXAMPLE_PROMPTS = [
   "Make emails for British lawyers",
   "Generate emails for American teachers",
   "Create emails for Canadian entrepreneurs",
-  "Make emails for Ghanaian students",
-  "Generate emails for Nigerian accountants",
-  "Create emails for Indian artists",
-  "Make emails for American engineers"
+  "Make emails for French engineers",
+  "Generate emails for Japanese developers",
+  "Create emails for Australian bankers",
+  "Make emails for Brazilian artists",
+  "Generate emails for German accountants",
+  "Create emails for Mexican students",
+  "Make emails for South African lawyers",
+  "Generate emails for Kenyan entrepreneurs"
 ];
