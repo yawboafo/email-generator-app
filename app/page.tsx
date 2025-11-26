@@ -91,92 +91,100 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
-            The Second Coming
-          </h1>
-        </div>
-
-        {/* Navigation Tabs */}
-        <div className="flex justify-center mb-6">
-          <div className="inline-flex bg-white rounded-lg shadow-md p-1">
-            <button
-              onClick={() => setActiveTab('generate')}
-              className={`px-6 py-2 rounded-md font-medium transition-colors ${
-                activeTab === 'generate'
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-700 hover:bg-gray-100'
-              }`}
-            >
-              Generate Emails
-            </button>
-            <button
-              onClick={() => setActiveTab('send')}
-              className={`px-6 py-2 rounded-md font-medium transition-colors ${
-                activeTab === 'send'
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-700 hover:bg-gray-100'
-              }`}
-            >
-              Send Emails
-            </button>
-            <button
-              onClick={() => setActiveTab('verify')}
-              className={`px-6 py-2 rounded-md font-medium transition-colors ${
-                activeTab === 'verify'
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-700 hover:bg-gray-100'
-              }`}
-            >
-              Verify Emails
-            </button>
-            <button
-              onClick={() => setActiveTab('saved')}
-              className={`px-6 py-2 rounded-md font-medium transition-colors relative ${
-                activeTab === 'saved'
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-700 hover:bg-gray-100'
-              }`}
-            >
-              Saved Emails
-              {savedBatchCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                  {savedBatchCount}
-                </span>
-              )}
-            </button>
+    <main className="min-h-screen bg-white">
+      {/* Ultra-Premium Header - Fixed with glass morphism */}
+      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-200/60 shadow-xs">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-xl font-semibold text-slate-900 tracking-tight">The Second Coming</h1>
+              <p className="text-sm text-slate-500 mt-0.5">Professional Email Management</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-medium text-sm shadow-sm">
+                A
+              </div>
+            </div>
           </div>
+        </div>
+      </header>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Navigation - Minimal pill design */}
+        <div className="flex justify-center mb-12">
+          <nav className="inline-flex bg-slate-50/50 rounded-2xl p-1.5 gap-1 shadow-xs border border-slate-200/40">
+            {['generate', 'send', 'verify', 'saved'].map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab as any)}
+                className={`relative px-6 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 ${
+                  activeTab === tab
+                    ? 'bg-white text-slate-900 shadow-sm'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
+                }`}
+              >
+                <span className="relative z-10 flex items-center gap-2">
+                  {tab === 'generate' && (
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                  )}
+                  {tab === 'send' && (
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                    </svg>
+                  )}
+                  {tab === 'verify' && (
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  )}
+                  {tab === 'saved' && (
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                    </svg>
+                  )}
+                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                  {tab === 'saved' && savedBatchCount > 0 && (
+                    <span className="ml-1 px-2 py-0.5 bg-indigo-600 text-white text-xs font-bold rounded-full shadow-xs">
+                      {savedBatchCount}
+                    </span>
+                  )}
+                </span>
+              </button>
+            ))}
+          </nav>
         </div>
 
         {/* Main Content */}
         {activeTab === 'generate' && (
           <div>
-            {/* Generator Mode Toggle */}
-            <div className="flex justify-center mb-6">
-              <div className="inline-flex bg-white rounded-lg shadow-md p-1 border-2 border-purple-300">
+            {/* Generator Mode Toggle - Premium pill style */}
+            <div className="flex justify-center mb-8">
+              <div className="inline-flex bg-slate-50/50 rounded-2xl p-1.5 gap-1 shadow-xs border border-slate-200/40">
                 <button
                   onClick={() => setGeneratorMode('standard')}
-                  className={`px-6 py-2 rounded-md font-medium transition-all ${
+                  className={`px-5 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 ${
                     generatorMode === 'standard'
-                      ? 'bg-blue-600 text-white shadow-md'
-                      : 'text-gray-700 hover:bg-gray-100'
+                      ? 'bg-white text-slate-900 shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
                   }`}
                 >
-                  📋 Standard Generator
+                  Standard Generator
                 </button>
                 <button
                   onClick={() => setGeneratorMode('ai')}
-                  className={`px-6 py-2 rounded-md font-medium transition-all flex items-center gap-2 ${
+                  className={`px-5 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 flex items-center gap-2 ${
                     generatorMode === 'ai'
-                      ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-md'
-                      : 'text-gray-700 hover:bg-purple-50'
+                      ? 'bg-gradient-to-br from-indigo-600 to-purple-600 text-white shadow-md'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
                   }`}
                 >
-                  🤖 AI Generator
-                  <span className="text-xs bg-yellow-400 text-purple-900 px-2 py-0.5 rounded-full font-bold">
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                  AI Generator
+                  <span className="px-2 py-0.5 bg-green-500 text-white text-xs font-bold rounded-full shadow-xs">
                     NEW
                   </span>
                 </button>
@@ -184,8 +192,8 @@ export default function Home() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Form Section */}
-              <div>
+              {/* Form Section - Premium card */}
+              <div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm hover:shadow-md transition-shadow duration-200 p-8">
                 {generatorMode === 'standard' ? (
                   <EmailForm 
                     onGenerate={handleGenerate} 
@@ -201,8 +209,8 @@ export default function Home() {
                 )}
               </div>
 
-              {/* Results Section */}
-              <div>
+              {/* Results Section - Premium card */}
+              <div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm hover:shadow-md transition-shadow duration-200 p-8">
                 <EmailResults 
                   emails={emails} 
                   meta={meta || { count: 0, providersUsed: [] }} 
@@ -215,62 +223,62 @@ export default function Home() {
 
         {activeTab === 'send' && (
           <div className="max-w-4xl mx-auto">
-            <div className="bg-white p-8 rounded-lg shadow-md">
-              <div className="flex justify-between items-center mb-4">
+            <div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm p-8">
+              <div className="flex justify-between items-center mb-8">
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-800">Send Emails</h2>
-                  <p className="text-gray-600 mt-1">Configure and send emails to your generated addresses.</p>
+                  <h2 className="text-2xl font-semibold text-slate-900 tracking-tight">Send Emails</h2>
+                  <p className="text-slate-500 text-sm mt-1">Configure and send emails to your generated addresses.</p>
                 </div>
                 <button
                   onClick={() => setActiveTab('saved')}
-                  className="flex items-center space-x-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md transition duration-200 font-semibold"
+                  className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition-all duration-200 font-medium text-sm shadow-sm hover:shadow-md"
                 >
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                   </svg>
                   <span>Import Saved Emails</span>
                 </button>
               </div>
               
-              <div className="space-y-4">
+              <div className="space-y-6">
                 <div>
-                  <label htmlFor="fromEmail" className="block text-sm font-medium text-gray-900 mb-2">
+                  <label htmlFor="fromEmail" className="block text-sm font-medium text-slate-700 mb-2">
                     From Email
                   </label>
                   <input
                     type="email"
                     id="fromEmail"
                     placeholder="sender@example.com"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white placeholder-gray-400"
+                    className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-transparent text-slate-900 bg-white placeholder-slate-400 transition-all duration-200"
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="subject" className="block text-sm font-medium text-gray-900 mb-2">
+                  <label htmlFor="subject" className="block text-sm font-medium text-slate-700 mb-2">
                     Subject
                   </label>
                   <input
                     type="text"
                     id="subject"
                     placeholder="Email subject"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white placeholder-gray-400"
+                    className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-transparent text-slate-900 bg-white placeholder-slate-400 transition-all duration-200"
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="message" className="block text-sm font-medium text-gray-900 mb-2">
+                  <label htmlFor="message" className="block text-sm font-medium text-slate-700 mb-2">
                     Message
                   </label>
                   <textarea
                     id="message"
                     rows={6}
                     placeholder="Your email message..."
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white placeholder-gray-400"
+                    className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-transparent text-slate-900 bg-white placeholder-slate-400 transition-all duration-200 resize-none"
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="recipients" className="block text-sm font-medium text-gray-900 mb-2">
+                  <label htmlFor="recipients" className="block text-sm font-medium text-slate-700 mb-2">
                     Recipients (comma-separated)
                   </label>
                   <textarea
@@ -279,18 +287,18 @@ export default function Home() {
                     onChange={(e) => setSendRecipients(e.target.value)}
                     rows={4}
                     placeholder="email1@example.com, email2@example.com"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white placeholder-gray-400"
+                    className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-transparent text-slate-900 bg-white placeholder-slate-400 transition-all duration-200 resize-none"
                   />
                   {sendRecipients && (
-                    <p className="text-sm text-gray-600 mt-1">
-                      {sendRecipients.split(',').filter(e => e.trim()).length} recipients
+                    <p className="text-sm text-slate-500 mt-2">
+                      {sendRecipients.split(',').filter(e => e.trim()).length} recipients selected
                     </p>
                   )}
                 </div>
 
                 <button
                   type="button"
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-md transition duration-200"
+                  className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 px-4 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md"
                 >
                   Send Emails
                 </button>
@@ -301,15 +309,15 @@ export default function Home() {
 
         {activeTab === 'verify' && (
           <div className="max-w-4xl mx-auto">
-            <div className="bg-white p-8 rounded-lg shadow-md">
-              <div className="flex justify-between items-center mb-4">
+            <div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm p-8">
+              <div className="flex justify-between items-center mb-8">
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-800">Verify Emails</h2>
-                  <p className="text-gray-600 mt-1">Check if email addresses are valid and deliverable.</p>
+                  <h2 className="text-2xl font-semibold text-slate-900 tracking-tight">Verify Emails</h2>
+                  <p className="text-slate-500 text-sm mt-1">Check if email addresses are valid and deliverable.</p>
                 </div>
                 <button
                   onClick={() => setActiveTab('saved')}
-                  className="flex items-center space-x-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md transition duration-200 font-semibold"
+                  className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition-all duration-200 font-medium text-sm shadow-sm hover:shadow-md"
                 >
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
@@ -318,9 +326,9 @@ export default function Home() {
                 </button>
               </div>
               
-              <div className="space-y-4">
+              <div className="space-y-6">
                 <div>
-                  <label htmlFor="emailsToVerify" className="block text-sm font-medium text-gray-900 mb-2">
+                  <label htmlFor="emailsToVerify" className="block text-sm font-medium text-slate-700 mb-2">
                     Email Addresses to Verify (one per line)
                   </label>
                   <textarea
@@ -331,10 +339,10 @@ export default function Home() {
                     placeholder="email1@example.com
 email2@example.com
 email3@example.com"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white placeholder-gray-400 font-mono"
+                    className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-transparent text-slate-900 bg-white placeholder-slate-400 font-mono text-sm transition-all duration-200 resize-none"
                   />
                   {verifyEmails && (
-                    <p className="text-sm text-gray-600 mt-1">
+                    <p className="text-sm text-slate-500 mt-2">
                       {verifyEmails.split('\n').filter(e => e.trim()).length} emails to verify
                     </p>
                   )}
@@ -342,14 +350,14 @@ email3@example.com"
 
                 <button
                   type="button"
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-md transition duration-200"
+                  className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 px-4 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md"
                 >
                   Verify Emails
                 </button>
 
-                <div className="mt-6 border-t pt-4">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-3">Verification Results</h3>
-                  <div className="bg-gray-50 rounded-lg p-4 text-center text-gray-500">
+                <div className="mt-8 pt-8 border-t border-slate-200">
+                  <h3 className="text-lg font-semibold text-slate-900 mb-4">Verification Results</h3>
+                  <div className="bg-slate-50/50 rounded-xl p-6 text-center text-slate-500 border border-slate-200/40">
                     No results yet. Enter emails above and click Verify.
                   </div>
                 </div>
@@ -375,20 +383,19 @@ email3@example.com"
           </div>
         )}
 
-        {/* Footer */}
-        <footer className="mt-12 text-center text-sm text-gray-600">
-          <div className="bg-white rounded-lg p-4 shadow-sm">
-            <p className="font-semibold mb-2">Email Management Suite</p>
-            <p className="mb-1">
-              Generate, send, and verify email addresses efficiently.
-            </p>
-            <p>
-              Use responsibly and in compliance with applicable laws.
-            </p>
+        {/* Footer - Minimal and elegant */}
+        <footer className="mt-20 text-center">
+          <div className="border-t border-slate-200 pt-8 pb-4">
+            <div className="text-sm text-slate-500 space-y-2">
+              <p className="font-medium text-slate-700">Email Management Suite</p>
+              <p className="text-xs">
+                Generate, send, and verify email addresses efficiently. Use responsibly and in compliance with applicable laws.
+              </p>
+              <p className="text-xs text-slate-400 pt-2">
+                Built with Next.js, TypeScript, and Tailwind CSS
+              </p>
+            </div>
           </div>
-          <p className="mt-4 text-gray-500">
-            Built with Next.js, TypeScript, and Tailwind CSS
-          </p>
         </footer>
       </div>
 
