@@ -7,6 +7,7 @@ import EmailResults from '@/components/EmailResults';
 import SaveEmailsModal from '@/components/SaveEmailsModal';
 import SavedEmailsList from '@/components/SavedEmailsList';
 import EmailProviderConfig, { EmailProviderKeys } from '@/components/EmailProviderConfig';
+import RichTextEditor from '@/components/RichTextEditor';
 import { SavedEmailBatch, Country, NamePattern } from '@/types';
 import { saveEmailBatch, getSavedEmailBatches } from '@/lib/storage';
 
@@ -502,16 +503,16 @@ export default function Home() {
 
                 <div>
                   <label htmlFor="message" className="block text-sm font-medium text-slate-700 mb-2">
-                    Message
+                    Message (Rich Text)
                   </label>
-                  <textarea
-                    id="message"
-                    value={emailMessage}
-                    onChange={(e) => setEmailMessage(e.target.value)}
-                    rows={6}
+                  <RichTextEditor
+                    content={emailMessage}
+                    onChange={setEmailMessage}
                     placeholder="Your email message..."
-                    className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-transparent text-slate-900 bg-white placeholder-slate-400 transition-all duration-200 resize-none"
                   />
+                  <p className="text-xs text-slate-500 mt-2">
+                    Use the toolbar to format your email with bold, italic, links, lists, colors, and more.
+                  </p>
                 </div>
 
                 <div>
