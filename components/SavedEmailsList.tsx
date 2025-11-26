@@ -6,10 +6,12 @@ import { getSavedEmailBatches, deleteSavedEmailBatch } from '@/lib/storage';
 
 interface SavedEmailsListProps {
   onImport?: (batch: SavedEmailBatch) => void;
+  onImportToSend?: (batch: SavedEmailBatch) => void;
+  onImportToVerify?: (batch: SavedEmailBatch) => void;
   onRefresh?: () => void;
 }
 
-export default function SavedEmailsList({ onImport, onRefresh }: SavedEmailsListProps) {
+export default function SavedEmailsList({ onImport, onImportToSend, onImportToVerify, onRefresh }: SavedEmailsListProps) {
   const [batches, setBatches] = useState<SavedEmailBatch[]>([]);
   const [selectedBatch, setSelectedBatch] = useState<string | null>(null);
 
@@ -146,6 +148,24 @@ export default function SavedEmailsList({ onImport, onRefresh }: SavedEmailsList
                         title="Import these emails"
                       >
                         Import
+                      </button>
+                    )}
+                    {onImportToSend && (
+                      <button
+                        onClick={() => onImportToSend(batch)}
+                        className="px-3 py-1 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-md transition-colors"
+                        title="Import to Send Emails"
+                      >
+                        📤 Send
+                      </button>
+                    )}
+                    {onImportToVerify && (
+                      <button
+                        onClick={() => onImportToVerify(batch)}
+                        className="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-md transition-colors"
+                        title="Import to Verify Emails"
+                      >
+                        ✓ Verify
                       </button>
                     )}
                     <button

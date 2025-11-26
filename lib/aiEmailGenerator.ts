@@ -215,6 +215,24 @@ const NATIONALITY_MAP: Record<string, string> = {
   'new zealand': 'NZ', 'new zealander': 'NZ', 'kiwi': 'NZ', 'kiwis': 'NZ',
 };
 
+// Additional aliases for broader coverage (country names, demonyms, abbreviations)
+const COUNTRY_ALIASES: Record<string, string> = {
+  'united states': 'US', 'u.s.': 'US', 'u.s.a.': 'US', 'us': 'US', 'usa': 'US',
+  'united kingdom': 'UK', 'great britain': 'UK', 'gb': 'UK', 'uk': 'UK', 'britain': 'UK',
+  'south korea': 'KR', 'north korea': 'KP',
+  'czechia': 'CZ', 'czech republic': 'CZ',
+  'ivory coast': 'CI', 'cote d’ivoire': 'CI', 'côte d’ivoire': 'CI',
+  'uae': 'AE', 'united arab emirates': 'AE',
+  'saudi arabia': 'SA', 'ksa': 'SA',
+  'dr congo': 'CD', 'democratic republic of the congo': 'CD', 'congo-kinshasa': 'CD',
+  'republic of the congo': 'CG', 'congo-brazzaville': 'CG',
+  'myanmar': 'MM', 'burma': 'MM',
+  'cape verde': 'CV', 'cabo verde': 'CV',
+  'eswatini': 'SZ', 'swaziland': 'SZ',
+  'taiwan': 'TW', 'roc': 'TW',
+  'palestine': 'PS', 'state of palestine': 'PS',
+};
+
 // Lazy load name data to reduce initial bundle size
 let nameDataCache: any = null;
 
@@ -254,18 +272,28 @@ try {
 function getNamesForCountry(countryCode: string): { firstNames: string[]; lastNames: string[] } {
   const countryData = (allNamesData as any)[countryCode];
   if (!countryData) {
-    // Fallback to US names
-    const usData = (allNamesData as any)['US'];
-    return {
-      firstNames: [...usData.firstNames.male, ...usData.firstNames.female, ...usData.firstNames.neutral],
-      lastNames: usData.lastNames
-    };
+    // If country is missing, synthesize plausible names to ensure global coverage
+    const synth = synthesizeNameSet();
+    return synth;
   }
   
   return {
     firstNames: [...countryData.firstNames.male, ...countryData.firstNames.female, ...countryData.firstNames.neutral],
     lastNames: countryData.lastNames
   };
+}
+
+// Create a small synthetic name set for missing countries
+function synthesizeNameSet(): { firstNames: string[]; lastNames: string[] } {
+  const syllables = ["an","el","li","ra","ko","mi","ta","no","vi","sa","lu","ro","da","na","ya","so","ri","ka","tu","ma"]; 
+  const make = (len: number) => {
+    let s = '';
+    for (let i = 0; i < len; i++) s += syllables[Math.floor(Math.random() * syllables.length)];
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  };
+  const firstNames = Array.from({ length: 40 }, () => make(Math.random() > 0.7 ? 3 : 2));
+  const lastNames = Array.from({ length: 40 }, () => make(3));
+  return { firstNames, lastNames };
 }
 
 /**
@@ -351,11 +379,22 @@ function parsePrompt(prompt: string): {
   let nationality: string | null = null;
   let countryCode = 'US'; // Default
   
-  for (const [natName, natCode] of Object.entries(NATIONALITY_MAP)) {
-    if (lowerPrompt.includes(natName)) {
-      nationality = natName;
-      countryCode = natCode;
+  // First check explicit aliases
+  for (const [alias, code] of Object.entries(COUNTRY_ALIASES)) {
+    if (lowerPrompt.includes(alias)) {
+      nationality = alias;
+      countryCode = code;
       break;
+    }
+  }
+  // Then check nationality map if alias not matched
+  if (!nationality) {
+    for (const [natName, natCode] of Object.entries(NATIONALITY_MAP)) {
+      if (lowerPrompt.includes(natName)) {
+        nationality = natName;
+        countryCode = natCode;
+        break;
+      }
     }
   }
   
@@ -422,6 +461,69 @@ function parsePrompt(prompt: string): {
 }
 
 /**
+ * Generate fully synthetic email using CHAR_SETS only (no real names)
+ */
+function generateSyntheticEmail(
+  context: ReturnType<typeof parsePrompt>,
+  provider: string
+): AIGeneratedEmail {
+  const { profession, countryCode, themes, style, includeNumbers, complexity, numberStyle } = context;
+  
+  let localPart = '';
+  let persona = `Synthetic ${countryCode} user`;
+  let reasoning = 'Generated fully synthetic email using CHAR_SETS';
+  
+  // Build base from pronounceable segments
+  const segmentLength = randomNum(2, 4);
+  const numSegments = complexity === 'simple' ? 2 : complexity === 'medium' ? 3 : 4;
+  
+  for (let i = 0; i < numSegments; i++) {
+    localPart += generatePronounceable(segmentLength);
+    if (i < numSegments - 1 && Math.random() > 0.5) {
+      localPart += getRandom(CHAR_SETS.specialChars);
+    }
+  }
+  
+  // Add theme words for context
+  const theme = getRandom(themes);
+  const themeWords = WORD_THEMES[theme as keyof typeof WORD_THEMES] || WORD_THEMES.casual;
+  if (Math.random() > 0.6) {
+    localPart = Math.random() > 0.5 ? `${getRandom(themeWords)}${localPart}` : `${localPart}${getRandom(themeWords)}`;
+  }
+  
+  // Apply leet speak transformation (high intensity for synthetic)
+  const leetIntensity = complexity === 'simple' ? 0.2 : complexity === 'medium' ? 0.35 : 0.5;
+  localPart = leetSpeak(localPart, leetIntensity);
+  
+  // Add numbers based on style
+  if (includeNumbers) {
+    if (numberStyle === 'heavy') {
+      localPart += randomNum(100, 9999);
+    } else if (numberStyle === 'moderate') {
+      localPart += randomNum(10, 999);
+    } else if (numberStyle === 'light') {
+      localPart += randomNum(1, 99);
+    } else {
+      if (Math.random() > 0.7) localPart += randomNum(1, 9);
+    }
+  }
+  
+  // Clean up
+  localPart = localPart
+    .replace(/\.{2,}/g, '.')
+    .replace(/_{2,}/g, '_')
+    .replace(/^[._]|[._]$/g, '')
+    .toLowerCase();
+  
+  const email = `${localPart}@${provider}`;
+  
+  persona = `Synthetic ${style} ${profession || 'user'} - fully CHAR_SETS generated`;
+  reasoning = `Generated fully synthetic email with ${leetIntensity*100}% leet speak intensity`;
+  
+  return { email, context: { persona, reasoning } };
+}
+
+/**
  * Generate a single email based on parsed context
  */
 function generateContextualEmail(
@@ -442,13 +544,20 @@ function generateContextualEmail(
     numberStyle 
   } = context;
   
-  // Get names from the appropriate country
-  const { firstNames, lastNames } = getNamesForCountry(countryCode);
+  // HYBRID APPROACH: 50% synthetic, 50% name-based with guaranteed enhancements
+  const useSynthetic = Math.random() > 0.5;
   
   let localPart = '';
   let persona = '';
   let reasoning = '';
   
+  // If using synthetic generation, create fully artificial emails from CHAR_SETS
+  if (useSynthetic) {
+    return generateSyntheticEmail(context, provider);
+  }
+  
+  // Otherwise, use name-based with GUARANTEED CHAR_SETS enhancements
+  const { firstNames, lastNames } = getNamesForCountry(countryCode);
   const firstName = getRandom(firstNames).toLowerCase();
   const lastName = getRandom(lastNames).toLowerCase();
   const firstInitial = firstName.charAt(0);
@@ -492,6 +601,17 @@ function generateContextualEmail(
       localPart += randomNum(1, 9);
     }
     
+    // GUARANTEED CHAR_SETS enhancements for all professional emails
+    // Apply leet speak (guaranteed - varies by complexity)
+    const leetIntensity = complexity === 'simple' ? 0.08 : complexity === 'medium' ? 0.15 : 0.25;
+    localPart = leetSpeak(localPart, leetIntensity);
+    
+    // Add pronounceable segment for extra uniqueness (50% chance)
+    if (complexity !== 'simple' && Math.random() > 0.5) {
+      const segment = generatePronounceable(2);
+      localPart = Math.random() > 0.5 ? `${localPart}${segment}` : `${segment}${localPart}`;
+    }
+    
     persona = `${nationality || countryCode} ${profession} - ${pattern} pattern`;
     reasoning = `Generated professional ${profession} email for ${nationality || countryCode} using realistic naming conventions`;
     
@@ -521,6 +641,16 @@ function generateContextualEmail(
     } else if (style === 'creative') {
       const base = getRandom(themeWords);
       localPart = `${firstName}${base}`;
+      
+      // GUARANTEED creative variations for uniqueness
+      // Mix in pronounceable random segments (guaranteed)
+      const pronounceable = generatePronounceable(randomNum(2, 4));
+      localPart = Math.random() > 0.5 ? `${localPart}${pronounceable}` : `${pronounceable}${localPart}`;
+      
+      // Apply leet speak (guaranteed - intensity based on complexity)
+      const leetIntensity = complexity === 'simple' ? 0.15 : complexity === 'medium' ? 0.25 : 0.35;
+      localPart = leetSpeak(localPart, leetIntensity);
+      
       if (includeNumbers && Math.random() > 0.6) localPart += randomNum(1, 999);
       persona = `Creative ${nationality || countryCode} user`;
       reasoning = `Generated creative email with ${nationality || countryCode} names`;
@@ -540,6 +670,16 @@ function generateContextualEmail(
         default:
           localPart = `${firstInitial}${lastName}`;
       }
+      
+      // GUARANTEED ultra-random variations for maximum uniqueness
+      // Insert random consonant-vowel combinations (guaranteed)
+      const randomSegment = generatePronounceable(randomNum(2, 3));
+      localPart = Math.random() > 0.5 ? `${localPart}${randomSegment}` : `${randomSegment}${localPart}`;
+      
+      // Apply leet speak variations (guaranteed - high intensity)
+      const leetIntensity = complexity === 'simple' ? 0.2 : complexity === 'medium' ? 0.3 : 0.45;
+      localPart = leetSpeak(localPart, leetIntensity);
+      
       if (includeNumbers && Math.random() > 0.5) localPart += randomNum(1, 999);
       persona = `Random ${nationality || countryCode} user`;
       reasoning = `Generated random-style email using ${nationality || countryCode} names`;
@@ -547,9 +687,28 @@ function generateContextualEmail(
     } else { // casual
       if (ageHint === 'young') {
         localPart = `${firstName}${lastName}${randomNum(1, 99)}`;
+        
+        // Young users get GUARANTEED creative variations
+        // Add random theme word (guaranteed)
+        const themeWord = getRandom(themeWords);
+        localPart = Math.random() > 0.5 ? `${localPart}${themeWord}` : `${themeWord}${localPart}`;
+        
+        // Apply leet speak for young users (guaranteed)
+        const leetIntensity = complexity === 'simple' ? 0.2 : 0.3;
+        localPart = leetSpeak(localPart, leetIntensity);
+        
         persona = `Young ${nationality || countryCode} user`;
       } else {
         localPart = `${firstName}.${lastName}`;
+        
+        // Add GUARANTEED variations for casual users
+        if (complexity !== 'simple') {
+          const pronounceable = generatePronounceable(2);
+          localPart = `${localPart}${pronounceable}`;
+          // Apply light leet speak
+          localPart = leetSpeak(localPart, 0.12);
+        }
+        
         if (includeNumbers && Math.random() > 0.6) localPart += randomNum(1, 9);
         persona = `Casual ${nationality || countryCode} user`;
       }
@@ -557,9 +716,17 @@ function generateContextualEmail(
     }
   }
   
+  // Add final uniqueness boost with subtle variations
+  if (Math.random() > 0.85 && includeNumbers) {
+    // Insert random year or special number combination
+    const specialNum = Math.random() > 0.5 ? randomNum(1990, 2010) : randomNum(10, 99);
+    localPart = `${localPart}${specialNum}`;
+  }
+  
   // Ensure valid email format (no consecutive dots, no starting/ending with dot or underscore)
   localPart = localPart
     .replace(/\.{2,}/g, '.')
+    .replace(/_{2,}/g, '_')
     .replace(/^[._]|[._]$/g, '')
     .toLowerCase();
   

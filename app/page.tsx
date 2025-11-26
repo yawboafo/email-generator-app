@@ -6,12 +6,10 @@ import AIEmailGenerator from '@/components/AIEmailGenerator';
 import EmailResults from '@/components/EmailResults';
 import SaveEmailsModal from '@/components/SaveEmailsModal';
 import SavedEmailsList from '@/components/SavedEmailsList';
-import LoginScreen from '@/components/LoginScreen';
 import { SavedEmailBatch, Country, NamePattern } from '@/types';
 import { saveEmailBatch, getSavedEmailBatches } from '@/lib/storage';
 
 export default function Home() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [emails, setEmails] = useState<string[]>([]);
   const [meta, setMeta] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -21,6 +19,10 @@ export default function Home() {
   const [savedBatchCount, setSavedBatchCount] = useState(0);
   const [sendRecipients, setSendRecipients] = useState('');
   const [verifyEmails, setVerifyEmails] = useState('');
+  const [verifyResults, setVerifyResults] = useState<any[]>([]);
+  const [verifyStats, setVerifyStats] = useState<any>(null);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [verifyProvider, setVerifyProvider] = useState<'emaillistverify' | 'mailboxlayer' | 'reacher' | 'mailsso'>('mailsso');
   const [currentGenerationParams, setCurrentGenerationParams] = useState<{
     country: Country;
     pattern: NamePattern;
@@ -30,10 +32,6 @@ export default function Home() {
   useEffect(() => {
     setSavedBatchCount(getSavedEmailBatches().length);
   }, []);
-
-  const handleLogin = () => {
-    setIsAuthenticated(true);
-  };
 
   const handleGenerate = (generatedEmails: string[], generatedMeta: any, params?: any) => {
     setEmails(generatedEmails);
@@ -85,10 +83,47 @@ export default function Home() {
     setSavedBatchCount(getSavedEmailBatches().length);
   };
 
-  // Show login screen if not authenticated
-  if (!isAuthenticated) {
-    return <LoginScreen onLogin={handleLogin} />;
-  }
+  const handleVerifyEmails = async () => {
+    const emailList = verifyEmails
+      .split('\n')
+      .map(e => e.trim())
+      .filter(e => e.length > 0);
+    
+    if (emailList.length === 0) {
+      alert('Please enter at least one email address to verify.');
+      return;
+    }
+
+    setIsVerifying(true);
+    setVerifyResults([]);
+    setVerifyStats(null);
+
+    try {
+      const response = await fetch('/api/verify-emails', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          emails: emailList,
+          method: verifyProvider,
+          concurrency: 5,
+        }),
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Verification failed');
+      }
+
+      setVerifyResults(data.results || []);
+      setVerifyStats(data.stats || null);
+    } catch (error) {
+      console.error('Verification error:', error);
+      alert(`Verification failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsVerifying(false);
+    }
+  };
 
   return (
     <main className="min-h-screen bg-white">
@@ -348,18 +383,272 @@ email3@example.com"
                   )}
                 </div>
 
+                {/* Provider Selection */}
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-3">
+                    Verification Provider
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setVerifyProvider('mailsso')}
+                      className={`p-4 rounded-xl border-2 transition-all duration-200 text-left ${
+                        verifyProvider === 'mailsso'
+                          ? 'border-indigo-600 bg-indigo-50'
+                          : 'border-slate-200 hover:border-slate-300 bg-white'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 mb-1">
+                        <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                          verifyProvider === 'mailsso' ? 'border-indigo-600' : 'border-slate-300'
+                        }`}>
+                          {verifyProvider === 'mailsso' && (
+                            <div className="w-2 h-2 rounded-full bg-indigo-600"></div>
+                          )}
+                        </div>
+                        <span className="font-medium text-slate-900">Mails.so</span>
+                      </div>
+                      <p className="text-xs text-slate-500 ml-6">Score-based validation</p>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setVerifyProvider('emaillistverify')}
+                      className={`p-4 rounded-xl border-2 transition-all duration-200 text-left ${
+                        verifyProvider === 'emaillistverify'
+                          ? 'border-indigo-600 bg-indigo-50'
+                          : 'border-slate-200 hover:border-slate-300 bg-white'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 mb-1">
+                        <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                          verifyProvider === 'emaillistverify' ? 'border-indigo-600' : 'border-slate-300'
+                        }`}>
+                          {verifyProvider === 'emaillistverify' && (
+                            <div className="w-2 h-2 rounded-full bg-indigo-600"></div>
+                          )}
+                        </div>
+                        <span className="font-medium text-slate-900">EmailListVerify</span>
+                      </div>
+                      <p className="text-xs text-slate-500 ml-6">SMTP verification</p>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setVerifyProvider('mailboxlayer')}
+                      className={`p-4 rounded-xl border-2 transition-all duration-200 text-left ${
+                        verifyProvider === 'mailboxlayer'
+                          ? 'border-indigo-600 bg-indigo-50'
+                          : 'border-slate-200 hover:border-slate-300 bg-white'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 mb-1">
+                        <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                          verifyProvider === 'mailboxlayer' ? 'border-indigo-600' : 'border-slate-300'
+                        }`}>
+                          {verifyProvider === 'mailboxlayer' && (
+                            <div className="w-2 h-2 rounded-full bg-indigo-600"></div>
+                          )}
+                        </div>
+                        <span className="font-medium text-slate-900">Mailboxlayer</span>
+                      </div>
+                      <p className="text-xs text-slate-500 ml-6">250 free/month</p>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setVerifyProvider('reacher')}
+                      className={`p-4 rounded-xl border-2 transition-all duration-200 text-left ${
+                        verifyProvider === 'reacher'
+                          ? 'border-indigo-600 bg-indigo-50'
+                          : 'border-slate-200 hover:border-slate-300 bg-white'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 mb-1">
+                        <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
+                          verifyProvider === 'reacher' ? 'border-indigo-600' : 'border-slate-300'
+                        }`}>
+                          {verifyProvider === 'reacher' && (
+                            <div className="w-2 h-2 rounded-full bg-indigo-600"></div>
+                          )}
+                        </div>
+                        <span className="font-medium text-slate-900">Reacher</span>
+                      </div>
+                      <p className="text-xs text-slate-500 ml-6">Self-hosted</p>
+                    </button>
+                  </div>
+                </div>
+
                 <button
                   type="button"
-                  className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 px-4 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md"
+                  onClick={handleVerifyEmails}
+                  disabled={isVerifying || !verifyEmails.trim()}
+                  className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-400 disabled:cursor-not-allowed text-white font-medium py-3 px-4 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center gap-2"
                 >
-                  Verify Emails
+                  {isVerifying ? (
+                    <>
+                      <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                      Verifying...
+                    </>
+                  ) : (
+                    'Verify Emails'
+                  )}
                 </button>
 
                 <div className="mt-8 pt-8 border-t border-slate-200">
                   <h3 className="text-lg font-semibold text-slate-900 mb-4">Verification Results</h3>
-                  <div className="bg-slate-50/50 rounded-xl p-6 text-center text-slate-500 border border-slate-200/40">
-                    No results yet. Enter emails above and click Verify.
-                  </div>
+                  
+                  {verifyStats && (
+                    <>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+                        <div className="bg-slate-50 rounded-xl p-4 text-center border border-slate-200/40">
+                          <p className="text-2xl font-bold text-slate-900">{verifyStats.total}</p>
+                          <p className="text-xs text-slate-500 mt-1">Total</p>
+                        </div>
+                        <div className="bg-green-50 rounded-xl p-4 text-center border border-green-200/40">
+                          <p className="text-2xl font-bold text-green-600">{verifyStats.valid}</p>
+                          <p className="text-xs text-green-600 mt-1">Valid</p>
+                        </div>
+                        <div className="bg-red-50 rounded-xl p-4 text-center border border-red-200/40">
+                          <p className="text-2xl font-bold text-red-600">{verifyStats.invalid}</p>
+                          <p className="text-xs text-red-600 mt-1">Invalid</p>
+                        </div>
+                        <div className="bg-amber-50 rounded-xl p-4 text-center border border-amber-200/40">
+                          <p className="text-2xl font-bold text-amber-600">{verifyStats.risky}</p>
+                          <p className="text-xs text-amber-600 mt-1">Risky</p>
+                        </div>
+                      </div>
+
+                      {/* Action buttons for verified emails */}
+                      <div className="flex flex-wrap gap-3 mb-6">
+                        <button
+                          onClick={() => {
+                            const validEmails = verifyResults.filter(r => r.status === 'valid').map(r => r.email);
+                            if (validEmails.length === 0) {
+                              alert('No valid emails to copy');
+                              return;
+                            }
+                            navigator.clipboard.writeText(validEmails.join('\n'));
+                            alert(`Copied ${validEmails.length} valid emails to clipboard`);
+                          }}
+                          className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-all duration-200 text-sm font-medium shadow-sm hover:shadow-md"
+                        >
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                          </svg>
+                          Copy Valid ({verifyStats.valid})
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            const validEmails = verifyResults.filter(r => r.status === 'valid').map(r => r.email);
+                            if (validEmails.length === 0) {
+                              alert('No valid emails to send');
+                              return;
+                            }
+                            setSendRecipients(validEmails.join(', '));
+                            setActiveTab('send');
+                            alert(`Imported ${validEmails.length} valid emails to Send tab`);
+                          }}
+                          className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all duration-200 text-sm font-medium shadow-sm hover:shadow-md"
+                        >
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                          </svg>
+                          Send Valid
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            const riskyEmails = verifyResults.filter(r => r.status === 'risky').map(r => r.email);
+                            if (riskyEmails.length === 0) {
+                              alert('No risky emails to copy');
+                              return;
+                            }
+                            navigator.clipboard.writeText(riskyEmails.join('\n'));
+                            alert(`Copied ${riskyEmails.length} risky emails to clipboard`);
+                          }}
+                          className="flex items-center gap-2 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition-all duration-200 text-sm font-medium shadow-sm hover:shadow-md"
+                        >
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                          </svg>
+                          Copy Risky ({verifyStats.risky})
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            const riskyEmails = verifyResults.filter(r => r.status === 'risky').map(r => r.email);
+                            if (riskyEmails.length === 0) {
+                              alert('No risky emails to send');
+                              return;
+                            }
+                            setSendRecipients(riskyEmails.join(', '));
+                            setActiveTab('send');
+                            alert(`Imported ${riskyEmails.length} risky emails to Send tab`);
+                          }}
+                          className="flex items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-all duration-200 text-sm font-medium shadow-sm hover:shadow-md"
+                        >
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                          </svg>
+                          Send Risky
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            const allEmails = verifyResults.map(r => r.email);
+                            navigator.clipboard.writeText(allEmails.join('\n'));
+                            alert(`Copied all ${allEmails.length} emails to clipboard`);
+                          }}
+                          className="flex items-center gap-2 px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-lg transition-all duration-200 text-sm font-medium shadow-sm hover:shadow-md"
+                        >
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                          </svg>
+                          Copy All
+                        </button>
+                      </div>
+                    </>
+                  )}
+                  
+                  {verifyResults.length > 0 ? (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b border-slate-200">
+                            <th className="text-left py-3 px-4 font-medium text-slate-700">Email</th>
+                            <th className="text-left py-3 px-4 font-medium text-slate-700">Status</th>
+                            <th className="text-left py-3 px-4 font-medium text-slate-700">Reason</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {verifyResults.map((result, idx) => (
+                            <tr key={idx} className="border-b border-slate-100 hover:bg-slate-50/50">
+                              <td className="py-3 px-4 font-mono text-slate-900">{result.email}</td>
+                              <td className="py-3 px-4">
+                                <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
+                                  result.status === 'valid' ? 'bg-green-100 text-green-700' :
+                                  result.status === 'risky' ? 'bg-amber-100 text-amber-700' :
+                                  'bg-red-100 text-red-700'
+                                }`}>
+                                  {result.status}
+                                </span>
+                              </td>
+                              <td className="py-3 px-4 text-slate-600">{result.reason}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <div className="bg-slate-50/50 rounded-xl p-6 text-center text-slate-500 border border-slate-200/40">
+                      No results yet. Enter emails above and click Verify.
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

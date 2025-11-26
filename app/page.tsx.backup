@@ -1,0 +1,683 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import EmailForm from '@/components/EmailForm';
+import AIEmailGenerator from '@/components/AIEmailGenerator';
+import EmailResults from '@/components/EmailResults';
+import SaveEmailsModal from '@/components/SaveEmailsModal';
+import SavedEmailsList from '@/components/SavedEmailsList';
+import LoginScreen from '@/components/LoginScreen';
+import { SavedEmailBatch, Country, NamePattern } from '@/types';
+import { saveEmailBatch, getSavedEmailBatches } from '@/lib/storage';
+
+export default function Home() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [emails, setEmails] = useState<string[]>([]);
+  const [meta, setMeta] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<'generate' | 'send' | 'verify' | 'saved'>('generate');
+  const [generatorMode, setGeneratorMode] = useState<'standard' | 'ai'>('standard');
+  const [showSaveModal, setShowSaveModal] = useState(false);
+  const [savedBatchCount, setSavedBatchCount] = useState(0);
+  const [sendRecipients, setSendRecipients] = useState('');
+  const [verifyEmails, setVerifyEmails] = useState('');
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [verificationResults, setVerificationResults] = useState<any>(null);
+  const [verificationProgress, setVerificationProgress] = useState<string>('');
+  const [verificationMethod, setVerificationMethod] = useState<'email-existence' | 'reacher' | 'emaillistverify'>('email-existence');
+  const [previousTab, setPreviousTab] = useState<'generate' | 'send' | 'verify' | 'saved'>('generate');
+  const [currentGenerationParams, setCurrentGenerationParams] = useState<{
+    country: Country;
+    pattern: NamePattern;
+    providers: string[];
+  } | null>(null);
+
+  useEffect(() => {
+    setSavedBatchCount(getSavedEmailBatches().length);
+  }, []);
+
+  const handleLogin = () => {
+    setIsAuthenticated(true);
+  };
+
+  const handleGenerate = (generatedEmails: string[], generatedMeta: any, params?: any) => {
+    setEmails(generatedEmails);
+    setMeta(generatedMeta);
+    if (params) {
+      setCurrentGenerationParams({
+        country: params.country || 'US',
+        pattern: params.pattern || 'firstname.lastname',
+        providers: params.providers || [],
+      });
+    } else if (generatedMeta.mode === 'ai') {
+      // For AI mode, we don't have traditional params, so use defaults
+      setCurrentGenerationParams({
+        country: 'US',
+        pattern: 'firstname.lastname',
+        providers: generatedMeta.patterns || [],
+      });
+    }
+  };
+
+  const handleSaveBatch = (name: string) => {
+    if (emails.length === 0 || !currentGenerationParams) return;
+    
+    saveEmailBatch(
+      name,
+      emails,
+      currentGenerationParams.providers,
+      currentGenerationParams.country,
+      currentGenerationParams.pattern
+    );
+    
+    setSavedBatchCount(getSavedEmailBatches().length);
+    alert(`Successfully saved ${emails.length.toLocaleString()} emails!`);
+  };
+
+  const handleImportToSend = (batch: SavedEmailBatch) => {
+    setSendRecipients(batch.emails.join(', '));
+    setActiveTab('send');
+    alert(`Imported ${batch.count.toLocaleString()} emails to Send tab`);
+  };
+
+  const handleImportToVerify = (batch: SavedEmailBatch) => {
+    setVerifyEmails(batch.emails.join('\n'));
+    setActiveTab('verify');
+    alert(`Imported ${batch.count.toLocaleString()} emails to Verify tab`);
+  };
+
+  const handleVerifyEmails = async () => {
+    const emailList = verifyEmails
+      .split('\n')
+      .map(e => e.trim())
+      .filter(e => e.length > 0);
+
+    if (emailList.length === 0) {
+      alert('Please enter at least one email address');
+      return;
+    }
+
+    setIsVerifying(true);
+    setVerificationResults(null);
+    setVerificationProgress(`Starting verification of ${emailList.length} emails...`);
+
+    try {
+      const startTime = Date.now();
+      
+      const response = await fetch('/api/verify-emails', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          emails: emailList,
+          concurrency: 5, // Process 5 emails at a time
+          method: verificationMethod, // Send selected verification method
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Verification failed');
+      }
+
+      const data = await response.json();
+      const duration = ((Date.now() - startTime) / 1000).toFixed(1);
+      setVerificationProgress(`Completed in ${duration}s`);
+      setVerificationResults(data);
+    } catch (error) {
+      console.error('Verification error:', error);
+      setVerificationProgress('');
+      alert(`Failed to verify emails: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  const refreshSavedCount = () => {
+    setSavedBatchCount(getSavedEmailBatches().length);
+  };
+
+  // Show login screen if not authenticated
+  if (!isAuthenticated) {
+    return <LoginScreen onLogin={handleLogin} />;
+  }
+
+  return (
+    <main className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-8 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">
+            The Second Coming
+          </h1>
+        </div>
+
+        {/* Navigation Tabs */}
+        <div className="flex justify-center mb-6">
+          <div className="inline-flex bg-white rounded-lg shadow-md p-1">
+            <button
+              onClick={() => setActiveTab('generate')}
+              className={`px-6 py-2 rounded-md font-medium transition-colors ${
+                activeTab === 'generate'
+                  ? 'bg-blue-600 text-white'
+                  : 'text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              Generate Emails
+            </button>
+            <button
+              onClick={() => setActiveTab('send')}
+              className={`px-6 py-2 rounded-md font-medium transition-colors ${
+                activeTab === 'send'
+                  ? 'bg-blue-600 text-white'
+                  : 'text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              Send Emails
+            </button>
+            <button
+              onClick={() => setActiveTab('verify')}
+              className={`px-6 py-2 rounded-md font-medium transition-colors ${
+                activeTab === 'verify'
+                  ? 'bg-blue-600 text-white'
+                  : 'text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              Verify Emails
+            </button>
+            <button
+              onClick={() => setActiveTab('saved')}
+              className={`px-6 py-2 rounded-md font-medium transition-colors relative ${
+                activeTab === 'saved'
+                  ? 'bg-blue-600 text-white'
+                  : 'text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              Saved Emails
+              {savedBatchCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                  {savedBatchCount}
+                </span>
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* Main Content */}
+        {activeTab === 'generate' && (
+          <div>
+            {/* Generator Mode Toggle */}
+            <div className="flex justify-center mb-6">
+              <div className="inline-flex bg-white rounded-lg shadow-md p-1 border-2 border-purple-300">
+                <button
+                  onClick={() => setGeneratorMode('standard')}
+                  className={`px-6 py-2 rounded-md font-medium transition-all ${
+                    generatorMode === 'standard'
+                      ? 'bg-blue-600 text-white shadow-md'
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  📋 Standard Generator
+                </button>
+                <button
+                  onClick={() => setGeneratorMode('ai')}
+                  className={`px-6 py-2 rounded-md font-medium transition-all flex items-center gap-2 ${
+                    generatorMode === 'ai'
+                      ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-md'
+                      : 'text-gray-700 hover:bg-purple-50'
+                  }`}
+                >
+                  🤖 AI Generator
+                  <span className="text-xs bg-yellow-400 text-purple-900 px-2 py-0.5 rounded-full font-bold">
+                    NEW
+                  </span>
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Form Section */}
+              <div>
+                {generatorMode === 'standard' ? (
+                  <EmailForm 
+                    onGenerate={handleGenerate} 
+                    isLoading={isLoading}
+                    setIsLoading={setIsLoading}
+                  />
+                ) : (
+                  <AIEmailGenerator 
+                    onGenerate={handleGenerate} 
+                    isLoading={isLoading}
+                    setIsLoading={setIsLoading}
+                  />
+                )}
+              </div>
+
+              {/* Results Section */}
+              <div>
+                <EmailResults 
+                  emails={emails} 
+                  meta={meta || { count: 0, providersUsed: [] }} 
+                  onSave={() => setShowSaveModal(true)}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'send' && (
+          <div className="max-w-4xl mx-auto">
+            <div className="bg-white p-8 rounded-lg shadow-md">
+              <div className="flex justify-between items-center mb-4">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-800">Send Emails</h2>
+                  <p className="text-gray-600 mt-1">Configure and send emails to your generated addresses.</p>
+                </div>
+                <button
+                  onClick={() => {
+                    setPreviousTab('send');
+                    setActiveTab('saved');
+                  }}
+                  className="flex items-center space-x-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md transition duration-200 font-semibold"
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                  </svg>
+                  <span>Import Saved Emails</span>
+                </button>
+              </div>
+              
+              <div className="space-y-4">
+                <div>
+                  <label htmlFor="fromEmail" className="block text-sm font-medium text-gray-900 mb-2">
+                    From Email
+                  </label>
+                  <input
+                    type="email"
+                    id="fromEmail"
+                    placeholder="sender@example.com"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white placeholder-gray-400"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="subject" className="block text-sm font-medium text-gray-900 mb-2">
+                    Subject
+                  </label>
+                  <input
+                    type="text"
+                    id="subject"
+                    placeholder="Email subject"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white placeholder-gray-400"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="message" className="block text-sm font-medium text-gray-900 mb-2">
+                    Message
+                  </label>
+                  <textarea
+                    id="message"
+                    rows={6}
+                    placeholder="Your email message..."
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white placeholder-gray-400"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="recipients" className="block text-sm font-medium text-gray-900 mb-2">
+                    Recipients (comma-separated)
+                  </label>
+                  <textarea
+                    id="recipients"
+                    value={sendRecipients}
+                    onChange={(e) => setSendRecipients(e.target.value)}
+                    rows={4}
+                    placeholder="email1@example.com, email2@example.com"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white placeholder-gray-400"
+                  />
+                  {sendRecipients && (
+                    <p className="text-sm text-gray-600 mt-1">
+                      {sendRecipients.split(',').filter(e => e.trim()).length} recipients
+                    </p>
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-md transition duration-200"
+                >
+                  Send Emails
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'verify' && (
+          <div className="max-w-4xl mx-auto">
+            <div className="bg-white p-8 rounded-lg shadow-md">
+              <div className="flex justify-between items-center mb-4">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-800">Verify Emails</h2>
+                  <p className="text-gray-600 mt-1">Check if email addresses are valid and deliverable.</p>
+                </div>
+                <button
+                  onClick={() => {
+                    setPreviousTab('verify');
+                    setActiveTab('saved');
+                  }}
+                  className="flex items-center space-x-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md transition duration-200 font-semibold"
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                  </svg>
+                  <span>Import Saved Emails</span>
+                </button>
+              </div>
+              
+              <div className="space-y-4">
+                {/* Verification Method Selection */}
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                  <label className="block text-sm font-medium text-gray-900 mb-3">
+                    Verification Method
+                  </label>
+                  <div className="space-y-3">
+                    <label className="flex items-start space-x-3 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="verificationMethod"
+                        value="email-existence"
+                        checked={verificationMethod === 'email-existence'}
+                        onChange={(e) => setVerificationMethod(e.target.value as 'email-existence' | 'reacher' | 'emaillistverify')}
+                        className="mt-1"
+                      />
+                      <div className="flex-1">
+                        <div className="font-medium text-gray-900">Email-Existence (Default)</div>
+                        <div className="text-sm text-gray-600">
+                          Built-in SMTP verification. Slower but reliable. ~5-10 seconds per email.
+                        </div>
+                      </div>
+                    </label>
+                    
+                    <label className="flex items-start space-x-3 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="verificationMethod"
+                        value="emaillistverify"
+                        checked={verificationMethod === 'emaillistverify'}
+                        onChange={(e) => setVerificationMethod(e.target.value as 'email-existence' | 'reacher' | 'emaillistverify')}
+                        className="mt-1"
+                      />
+                      <div className="flex-1">
+                        <div className="font-medium text-gray-900">EmailListVerify (Commercial API)</div>
+                        <div className="text-sm text-gray-600">
+                          Fast cloud-based verification with disposable email detection. No setup required. ~1-2 seconds per email.
+                        </div>
+                      </div>
+                    </label>
+                    
+                    <label className="flex items-start space-x-3 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="verificationMethod"
+                        value="reacher"
+                        checked={verificationMethod === 'reacher'}
+                        onChange={(e) => setVerificationMethod(e.target.value as 'email-existence' | 'reacher' | 'emaillistverify')}
+                        className="mt-1"
+                      />
+                      <div className="flex-1">
+                        <div className="font-medium text-gray-900">Reacher API (Self-Hosted)</div>
+                        <div className="text-sm text-gray-600">
+                          Fast & accurate with detailed results. Requires Docker service running on localhost:8080.
+                          <a 
+                            href="https://github.com/reacherhq/check-if-email-exists" 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:underline ml-1"
+                          >
+                            Setup guide →
+                          </a>
+                        </div>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor="emailsToVerify" className="block text-sm font-medium text-gray-900 mb-2">
+                    Email Addresses to Verify (one per line)
+                  </label>
+                  <textarea
+                    id="emailsToVerify"
+                    value={verifyEmails}
+                    onChange={(e) => setVerifyEmails(e.target.value)}
+                    rows={10}
+                    placeholder="email1@example.com
+email2@example.com
+email3@example.com"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white placeholder-gray-400 font-mono"
+                  />
+                  {verifyEmails && (
+                    <p className="text-sm text-gray-600 mt-1">
+                      {verifyEmails.split('\n').filter(e => e.trim()).length} emails to verify
+                    </p>
+                  )}
+                </div>
+
+                {/* Warning about verification time */}
+                {verificationMethod === 'email-existence' ? (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                    <p className="text-sm text-yellow-800">
+                      ⚠️ <strong>Note:</strong> Email-Existence verification can take 3-5 seconds per email. For large batches, this may take several minutes.
+                    </p>
+                  </div>
+                ) : verificationMethod === 'emaillistverify' ? (
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                    <p className="text-sm text-green-800">
+                      ✓ <strong>EmailListVerify:</strong> Fast cloud API with disposable email detection. ~1-2 seconds per email. Ready to use!
+                    </p>
+                  </div>
+                ) : (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    <p className="text-sm text-blue-800">
+                      ℹ️ <strong>Reacher API:</strong> Faster verification with detailed results. Make sure Docker service is running:
+                      <code className="block mt-1 bg-white px-2 py-1 rounded text-xs">
+                        docker run -p 8080:3000 reacherhq/check-if-email-exists
+                      </code>
+                    </p>
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={handleVerifyEmails}
+                  disabled={isVerifying || !verifyEmails.trim()}
+                  className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-md transition duration-200 flex items-center justify-center"
+                >
+                  {isVerifying ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Verifying...
+                    </>
+                  ) : (
+                    'Verify Emails'
+                  )}
+                </button>
+
+                <div className="mt-6 border-t pt-4">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-3">Verification Results</h3>
+                  
+                  {isVerifying && (
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
+                      <div className="flex items-center justify-center space-x-3">
+                        <svg className="animate-spin h-5 w-5 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span className="text-blue-700 font-medium">{verificationProgress}</span>
+                      </div>
+                      <p className="text-sm text-blue-600 mt-2">This may take a few seconds per email...</p>
+                    </div>
+                  )}
+                  
+                  {!verificationResults && !isVerifying && (
+                    <div className="bg-gray-50 rounded-lg p-4 text-center text-gray-500">
+                      No results yet. Enter emails above and click Verify.
+                    </div>
+                  )}
+
+                  {verificationResults && (
+                    <div className="space-y-4">
+                      {/* Completion Message */}
+                      {verificationProgress && (
+                        <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-center">
+                          <span className="text-green-700 font-medium">✓ {verificationProgress}</span>
+                        </div>
+                      )}
+                      
+                      {/* Statistics */}
+                      <div className="grid grid-cols-4 gap-4">
+                        <div className="bg-blue-50 p-4 rounded-lg">
+                          <p className="text-sm text-gray-600">Total</p>
+                          <p className="text-2xl font-bold text-blue-600">{verificationResults.stats.total}</p>
+                        </div>
+                        <div className="bg-green-50 p-4 rounded-lg">
+                          <p className="text-sm text-gray-600">Valid</p>
+                          <p className="text-2xl font-bold text-green-600">{verificationResults.stats.valid}</p>
+                        </div>
+                        <div className="bg-red-50 p-4 rounded-lg">
+                          <p className="text-sm text-gray-600">Invalid</p>
+                          <p className="text-2xl font-bold text-red-600">{verificationResults.stats.invalid}</p>
+                        </div>
+                        <div className="bg-yellow-50 p-4 rounded-lg">
+                          <p className="text-sm text-gray-600">Risky</p>
+                          <p className="text-2xl font-bold text-yellow-600">{verificationResults.stats.risky}</p>
+                        </div>
+                      </div>
+
+                      {/* Results Table */}
+                      <div className="border rounded-lg overflow-hidden">
+                        <div className="max-h-96 overflow-y-auto">
+                          <table className="min-w-full divide-y divide-gray-200">
+                            <thead className="bg-gray-50 sticky top-0">
+                              <tr>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reason</th>
+                              </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-200">
+                              {verificationResults.results.map((result: any, index: number) => (
+                                <tr key={index} className="hover:bg-gray-50">
+                                  <td className="px-4 py-3 text-sm font-mono text-gray-900">{result.email}</td>
+                                  <td className="px-4 py-3 text-sm">
+                                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                      result.status === 'valid' ? 'bg-green-100 text-green-800' :
+                                      result.status === 'invalid' ? 'bg-red-100 text-red-800' :
+                                      result.status === 'risky' ? 'bg-yellow-100 text-yellow-800' :
+                                      'bg-gray-100 text-gray-800'
+                                    }`}>
+                                      {result.status.toUpperCase()}
+                                    </span>
+                                  </td>
+                                  <td className="px-4 py-3 text-sm text-gray-600">{result.reason}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+
+                      {/* Export Options */}
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => {
+                            const validEmails = verificationResults.results
+                              .filter((r: any) => r.status === 'valid')
+                              .map((r: any) => r.email)
+                              .join('\n');
+                            navigator.clipboard.writeText(validEmails);
+                            alert(`Copied ${verificationResults.stats.valid} valid emails to clipboard`);
+                          }}
+                          className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md text-sm font-semibold"
+                        >
+                          Copy Valid Emails
+                        </button>
+                        <button
+                          onClick={() => {
+                            const invalidEmails = verificationResults.results
+                              .filter((r: any) => r.status === 'invalid')
+                              .map((r: any) => r.email)
+                              .join('\n');
+                            navigator.clipboard.writeText(invalidEmails);
+                            alert(`Copied ${verificationResults.stats.invalid} invalid emails to clipboard`);
+                          }}
+                          className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md text-sm font-semibold"
+                        >
+                          Copy Invalid Emails
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'saved' && (
+          <div className="max-w-6xl mx-auto">
+            <SavedEmailsList 
+              onImport={(batch) => {
+                // If we came from verify or send tab, import there directly
+                if (previousTab === 'verify') {
+                  handleImportToVerify(batch);
+                } else if (previousTab === 'send') {
+                  handleImportToSend(batch);
+                } else {
+                  // Otherwise, show import options
+                  const choice = confirm(`Import "${batch.name}" (${batch.count.toLocaleString()} emails) to:\n\nOK = Send Emails tab\nCancel = Verify Emails tab`);
+                  if (choice) {
+                    handleImportToSend(batch);
+                  } else {
+                    handleImportToVerify(batch);
+                  }
+                }
+              }}
+              onRefresh={refreshSavedCount}
+            />
+          </div>
+        )}
+
+        {/* Footer */}
+        <footer className="mt-12 text-center text-sm text-gray-600">
+          <div className="bg-white rounded-lg p-4 shadow-sm">
+            <p className="font-semibold mb-2">Email Management Suite</p>
+            <p className="mb-1">
+              Generate, send, and verify email addresses efficiently.
+            </p>
+            <p>
+              Use responsibly and in compliance with applicable laws.
+            </p>
+          </div>
+          <p className="mt-4 text-gray-500">
+            Built with Next.js, TypeScript, and Tailwind CSS
+          </p>
+        </footer>
+      </div>
+
+      {/* Save Modal */}
+      <SaveEmailsModal
+        isOpen={showSaveModal}
+        onClose={() => setShowSaveModal(false)}
+        onSave={handleSaveBatch}
+        emailCount={emails.length}
+      />
+    </main>
+  );
+}

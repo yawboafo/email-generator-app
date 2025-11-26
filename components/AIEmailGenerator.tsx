@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { EXAMPLE_PROMPTS, getSupportedCountriesCount } from '@/lib/aiEmailGenerator';
+import allCountries from '@/data/countries.json';
 import providers from '@/data/providers.json';
 
 interface AIEmailGeneratorProps {
@@ -17,6 +18,8 @@ export default function AIEmailGenerator({ onGenerate, isLoading, setIsLoading }
   const [error, setError] = useState<string>('');
   const [showExamples, setShowExamples] = useState<boolean>(false);
   const [countriesCount, setCountriesCount] = useState<number>(0);
+  const [showCountries, setShowCountries] = useState<boolean>(false);
+  const countries = allCountries as Array<{ code: string; name: string }>;
 
   const providerList = providers as Array<{ id: string; name: string; domain: string }>;
 
@@ -111,11 +114,40 @@ export default function AIEmailGenerator({ onGenerate, isLoading, setIsLoading }
       <div className="bg-gradient-to-r from-purple-600 to-blue-600 p-4 rounded-lg text-white">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-2xl font-bold">{countriesCount}+ Countries</p>
-            <p className="text-sm opacity-90">Global name database with authentic names from every continent</p>
+            <p className="text-2xl font-bold">Worldwide Coverage</p>
+            <p className="text-sm opacity-90">All countries supported via authentic data and smart fallback</p>
+            <p className="text-xs opacity-80 mt-1">Currently {countriesCount}+ with built-in support for any country name</p>
           </div>
           <div className="text-4xl">🌍</div>
         </div>
+      </div>
+
+      {/* Browse All Countries */}
+      <div className="bg-white p-4 rounded-lg border border-purple-200">
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-gray-800">Browse all countries (~195)</p>
+          <button
+            type="button"
+            onClick={() => setShowCountries(!showCountries)}
+            className="text-sm text-purple-600 hover:text-purple-800 font-medium"
+          >
+            {showCountries ? '✕ Hide' : '🌐 Show'}
+          </button>
+        </div>
+        {showCountries && (
+          <div className="mt-3 max-h-64 overflow-y-auto">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+              {countries.map((c) => (
+                <span key={c.code} className="text-xs text-gray-700 px-2 py-1 border rounded">
+                  {c.name}
+                </span>
+              ))}
+            </div>
+            <p className="text-xs text-gray-500 mt-2">
+              Tip: You can type any country name in your prompt (e.g., "Generate emails for bankers in Albania").
+            </p>
+          </div>
+        )}
       </div>
 
       <div className="bg-white p-4 rounded-lg border border-purple-200">

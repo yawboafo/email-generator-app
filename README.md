@@ -1,11 +1,11 @@
 # Email Generator App 🌍
 
-An advanced AI-powered email generator with **global coverage of 50+ countries**, supporting authentic names from every continent. Generate ultra-realistic emails for any profession and nationality combination.
+An advanced AI-powered email generator with **Worldwide Coverage**. Uses authentic datasets for 50+ countries and smart fallback to support emails for **any country name** you provide.
 
 ## 🌟 Features
 
 - **🤖 AI Email Generator**: Natural language prompts to generate contextual emails
-- **🌍 50+ Countries**: Authentic names from US, UK, Canada, France, Germany, Japan, Brazil, Australia, and 40+ more
+- **🌍 Worldwide Coverage**: Authentic names for 50+ countries, plus smart fallback to support all ~195 countries
 - **👔 10+ Professions**: Specialized patterns for bankers, doctors, lawyers, engineers, developers, and more
 - **⚡ High Performance**: Optimized for Vercel with lazy loading and efficient data structures
 - **📊 Batch Generation**: Generate up to 500,000 emails in a single request
@@ -43,7 +43,7 @@ The easiest way to deploy is using [Vercel Platform](https://vercel.com/new):
 
 ## 🌐 Global Coverage
 
-Supports authentic names from **50+ countries** including:
+Supports authentic names from **50+ countries** (mapped), and accepts prompts for **all countries worldwide** via intelligent synthesis when a dataset isn’t yet mapped:
 - 🌍 **Africa**: Ghana, Nigeria, Kenya, South Africa, Egypt, Morocco
 - 🌎 **Americas**: USA, Canada, Mexico, Brazil, Argentina, Chile, Colombia
 - 🌏 **Asia**: India, Japan, China, South Korea, Thailand, Vietnam, Philippines

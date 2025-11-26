@@ -38,7 +38,7 @@ function getRandomNumber(min: number, max: number): number {
  * Generate a random first name based on country and gender
  */
 export function generateFirstName(country: Country, gender: Gender): string {
-  const countryData = names[country];
+  const countryData = names[country] || names['US']; // Fallback to US if country not in dataset
   if (!countryData) {
     throw new Error(`Country ${country} not found in name data`);
   }
@@ -62,7 +62,7 @@ export function generateFirstName(country: Country, gender: Gender): string {
  * Generate a random last name based on country
  */
 export function generateLastName(country: Country): string {
-  const countryData = names[country];
+  const countryData = names[country] || names['US']; // Fallback to US if country not in dataset
   if (!countryData) {
     throw new Error(`Country ${country} not found in name data`);
   }
@@ -341,9 +341,8 @@ export function validateRequest(data: any): {
   }
 
   // Validate country
-  const validCountries = ['US', 'GH', 'UK', 'NG', 'IN', 'CA'];
-  if (!data.country || !validCountries.includes(data.country)) {
-    errors.push(`country must be one of: ${validCountries.join(', ')}`);
+  if (!data.country || typeof data.country !== 'string') {
+    errors.push('country must be a valid country code string');
   }
 
   // Validate ageRange

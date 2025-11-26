@@ -1,6 +1,6 @@
-# Global Coverage - All Supported Countries
+# Global Coverage - Worldwide Support
 
-## 🌍 Complete Country List (50+ Countries)
+## 🌍 Complete Country List (Mapped: 50+ | Worldwide: ~195)
 
 ### Africa (6 countries)
 1. 🇬🇭 **Ghana (GH)** - Ghanaian names, 50+ cities including Accra, Kumasi
@@ -48,11 +48,11 @@
 35. 🇬🇷 **Greece (GR)** - Greek names, Athens, Thessaloniki
 36. 🇹🇷 **Turkey (TR)** - Turkish names, Istanbul, Ankara
 
-### Asia - East (2 countries)
+### Asia - East (2 countries mapped; accepts prompts for all)
 37. 🇯🇵 **Japan (JP)** - Japanese names, 40+ cities including Tokyo
 38. 🇰🇷 **South Korea (KR)** - Korean names, Seoul, Busan
 
-### Asia - Southeast (6 countries)
+### Asia - Southeast (6 countries mapped; accepts prompts for all)
 39. 🇹🇭 **Thailand (TH)** - Thai names, Bangkok, Chiang Mai
 40. 🇻🇳 **Vietnam (VN)** - Vietnamese names, Ho Chi Minh City, Hanoi
 41. 🇵🇭 **Philippines (PH)** - Filipino names, Manila, Quezon City

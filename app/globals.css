@@ -1,43 +1,43 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 /*
- * ULTRA-PREMIUM UI DESIGN SYSTEM v2.0
- * Design Philosophy: Hyper-minimal SaaS aesthetic with surgical whitespace
- * Color Strategy: Near-monochrome slate with strategic indigo accent
- * Typography: System fonts for native feel and instant load
- * Interactions: Buttery 60fps transitions with tactile feedback
+ * ULTRA-PREMIUM UI DESIGN SYSTEM
+ * Design Philosophy: Minimalist SaaS aesthetic with strategic whitespace and sophisticated interactions
+ * Color Strategy: Neutral slate palette with indigo accents for trust and professionalism
+ * Typography: Inter font family for clean, modern readability
  */
 
 :root {
-  /* Refined Neutral Palette */
+  /* Premium Color Palette - Neutral + Indigo Accent */
   --color-primary: #6366f1;
-  --color-primary-hover: #4f46e5;
-  --color-primary-light: #a5b4fc;
+  --color-primary-dark: #4f46e5;
+  --color-primary-light: #818cf8;
   --color-success: #10b981;
   --color-warning: #f59e0b;
   --color-danger: #ef4444;
   --color-text-primary: #0f172a;
-  --color-text-secondary: #64748b;
+  --color-text-secondary: #475569;
   --color-text-muted: #94a3b8;
   --color-bg-primary: #ffffff;
-  --color-bg-secondary: #fafafa;
-  --color-bg-tertiary: #f8fafc;
+  --color-bg-secondary: #f8fafc;
+  --color-bg-tertiary: #f1f5f9;
   --color-border: #e2e8f0;
   --color-border-light: #f1f5f9;
   
-  /* Refined Shadow System */
-  --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.02);
-  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.04);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.04), 0 2px 4px -2px rgb(0 0 0 / 0.02);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.05), 0 4px 6px -4px rgb(0 0 0 / 0.02);
-  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.06), 0 8px 10px -6px rgb(0 0 0 / 0.03);
+  /* Premium Shadows for depth */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.03);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.03);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.06), 0 4px 6px -4px rgb(0 0 0 / 0.03);
+  --shadow-premium: 0 20px 25px -5px rgb(0 0 0 / 0.08), 0 8px 10px -6px rgb(0 0 0 / 0.04);
   
-  /* Buttery Smooth Transitions */
-  --transition-fast: 120ms cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-base: 180ms cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-smooth: 280ms cubic-bezier(0.4, 0, 0.1, 1);
+  /* Smooth Transitions */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-base: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-smooth: 300ms cubic-bezier(0.4, 0, 0.2, 1);
   
-  /* Surgical Spacing */
+  /* Spacing System (8px base grid) */
   --spacing-xs: 8px;
   --spacing-sm: 12px;
   --spacing-md: 16px;
@@ -46,12 +46,14 @@
   --spacing-2xl: 48px;
   
   /* Border Radius */
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
   --radius-xl: 20px;
+  --radius-full: 9999px;
 }
 
+/* Base Styles with Premium Typography */
 * {
   margin: 0;
   padding: 0;
@@ -59,43 +61,41 @@
 }
 
 body {
-  font-family: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+  font-family: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   font-size: 15px;
-  line-height: 1.5;
+  line-height: 1.6;
   color: var(--color-text-primary);
-  background: var(--color-bg-primary);
+  background: var(--color-bg-secondary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   letter-spacing: -0.011em;
 }
 
-/* Ultra-minimal scrollbar */
+/* Premium Scrollbar */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
 }
 
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: var(--color-bg-tertiary);
 }
 
 ::-webkit-scrollbar-thumb {
   background: var(--color-border);
-  border-radius: 4px;
-  border: 2px solid transparent;
-  background-clip: padding-box;
+  border-radius: 5px;
+  border: 2px solid var(--color-bg-tertiary);
 }
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--color-text-muted);
-  background-clip: padding-box;
 }
 
 /* Smooth Animations */
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(10px);
   }
   to {
     opacity: 1;
@@ -106,7 +106,7 @@ body {
 @keyframes slideIn {
   from {
     opacity: 0;
-    transform: translateX(-8px);
+    transform: translateX(-10px);
   }
   to {
     opacity: 1;
@@ -121,32 +121,20 @@ body {
 }
 
 .fade-in {
-  animation: fadeIn 0.25s ease-out;
+  animation: fadeIn 0.3s ease-out;
 }
 
 .slide-in {
-  animation: slideIn 0.25s ease-out;
+  animation: slideIn 0.3s ease-out;
 }
 
 /* Premium Loading Spinner */
 .spinner {
   display: inline-block;
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   border: 2px solid var(--color-border);
   border-top-color: var(--color-primary);
   border-radius: 50%;
   animation: spin 0.6s linear infinite;
-}
-
-/* Focus States - Accessibility with style */
-*:focus-visible {
-  outline: 2px solid var(--color-primary-light);
-  outline-offset: 2px;
-}
-
-button:focus-visible,
-a:focus-visible {
-  outline: 2px solid var(--color-primary);
-  outline-offset: 2px;
 }
