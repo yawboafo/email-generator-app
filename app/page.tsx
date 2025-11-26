@@ -6,6 +6,7 @@ import AIEmailGenerator from '@/components/AIEmailGenerator';
 import EmailResults from '@/components/EmailResults';
 import SaveEmailsModal from '@/components/SaveEmailsModal';
 import SavedEmailsList from '@/components/SavedEmailsList';
+import EmailProviderConfig, { EmailProviderKeys } from '@/components/EmailProviderConfig';
 import { SavedEmailBatch, Country, NamePattern } from '@/types';
 import { saveEmailBatch, getSavedEmailBatches } from '@/lib/storage';
 
@@ -23,6 +24,10 @@ export default function Home() {
   const [verifyStats, setVerifyStats] = useState<any>(null);
   const [isVerifying, setIsVerifying] = useState(false);
   const [verifyProvider, setVerifyProvider] = useState<'emaillistverify' | 'mailboxlayer' | 'reacher' | 'mailsso'>('mailsso');
+  const [showImportToVerifyModal, setShowImportToVerifyModal] = useState(false);
+  const [showProviderConfig, setShowProviderConfig] = useState(false);
+  const [sendProvider, setSendProvider] = useState<'resend' | 'sendgrid' | 'mailgun' | 'brevo' | 'ses' | 'postmark' | 'mailjet' | 'sparkpost'>('resend');
+  const [providerKeys, setProviderKeys] = useState<EmailProviderKeys>({});
   const [currentGenerationParams, setCurrentGenerationParams] = useState<{
     country: Country;
     pattern: NamePattern;
@@ -31,7 +36,30 @@ export default function Home() {
 
   useEffect(() => {
     setSavedBatchCount(getSavedEmailBatches().length);
+    // Load saved provider keys
+    const saved = localStorage.getItem('emailProviderKeys');
+    if (saved) {
+      setProviderKeys(JSON.parse(saved));
+    }
   }, []);
+
+  const handleSaveProviderKeys = (keys: EmailProviderKeys) => {
+    setProviderKeys(keys);
+  };
+
+  const isProviderConfigured = (provider: string): boolean => {
+    switch (provider) {
+      case 'resend': return !!providerKeys.resend;
+      case 'sendgrid': return !!providerKeys.sendgrid;
+      case 'mailgun': return !!(providerKeys.mailgun?.apiKey && providerKeys.mailgun?.domain);
+      case 'brevo': return !!providerKeys.brevo;
+      case 'ses': return !!(providerKeys.ses?.accessKeyId && providerKeys.ses?.secretAccessKey && providerKeys.ses?.region);
+      case 'postmark': return !!providerKeys.postmark;
+      case 'mailjet': return !!(providerKeys.mailjet?.apiKey && providerKeys.mailjet?.apiSecret);
+      case 'sparkpost': return !!providerKeys.sparkpost;
+      default: return false;
+    }
+  };
 
   const handleGenerate = (generatedEmails: string[], generatedMeta: any, params?: any) => {
     setEmails(generatedEmails);
@@ -75,7 +103,7 @@ export default function Home() {
 
   const handleImportToVerify = (batch: SavedEmailBatch) => {
     setVerifyEmails(batch.emails.join('\n'));
-    setActiveTab('verify');
+    setShowImportToVerifyModal(false);
     alert(`Imported ${batch.count.toLocaleString()} emails to Verify tab`);
   };
 
@@ -264,18 +292,83 @@ export default function Home() {
                   <h2 className="text-2xl font-semibold text-slate-900 tracking-tight">Send Emails</h2>
                   <p className="text-slate-500 text-sm mt-1">Configure and send emails to your generated addresses.</p>
                 </div>
-                <button
-                  onClick={() => setActiveTab('saved')}
-                  className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition-all duration-200 font-medium text-sm shadow-sm hover:shadow-md"
-                >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                  </svg>
-                  <span>Import Saved Emails</span>
-                </button>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowProviderConfig(true)}
+                    className="flex items-center gap-2 px-4 py-2.5 border border-indigo-600 text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all duration-200 font-medium text-sm"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <span>Configure Providers</span>
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('saved')}
+                    className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition-all duration-200 font-medium text-sm shadow-sm hover:shadow-md"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                    <span>Import Saved</span>
+                  </button>
+                </div>
               </div>
               
               <div className="space-y-6">
+                {/* Provider Selection */}
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-3">
+                    Email Provider
+                  </label>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    {[
+                      { id: 'resend', name: 'Resend', free: '3K/mo' },
+                      { id: 'sendgrid', name: 'SendGrid', free: '100/day' },
+                      { id: 'mailgun', name: 'Mailgun', free: '5K/mo' },
+                      { id: 'brevo', name: 'Brevo', free: '300/day' },
+                      { id: 'ses', name: 'AWS SES', free: '62K/mo' },
+                      { id: 'postmark', name: 'Postmark', free: 'Paid' },
+                      { id: 'mailjet', name: 'Mailjet', free: '6K/mo' },
+                      { id: 'sparkpost', name: 'SparkPost', free: '500/mo' },
+                    ].map((provider) => (
+                      <button
+                        key={provider.id}
+                        type="button"
+                        onClick={() => setSendProvider(provider.id as any)}
+                        className={`p-3 rounded-xl border-2 transition-all duration-200 text-left relative ${
+                          sendProvider === provider.id
+                            ? 'border-indigo-600 bg-indigo-50'
+                            : 'border-slate-200 hover:border-slate-300 bg-white'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 mb-1">
+                          <div className={`w-3 h-3 rounded-full border-2 flex items-center justify-center ${
+                            sendProvider === provider.id ? 'border-indigo-600' : 'border-slate-300'
+                          }`}>
+                            {sendProvider === provider.id && (
+                              <div className="w-1.5 h-1.5 rounded-full bg-indigo-600"></div>
+                            )}
+                          </div>
+                          <span className="font-medium text-sm text-slate-900">{provider.name}</span>
+                          {!isProviderConfigured(provider.id) && (
+                            <span className="text-red-500 text-xs">⚠️</span>
+                          )}
+                        </div>
+                        <p className="text-xs text-slate-500 ml-5">{provider.free}</p>
+                      </button>
+                    ))}
+                  </div>
+                  {!isProviderConfigured(sendProvider) && (
+                    <p className="text-sm text-amber-600 mt-2 flex items-center gap-1">
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                      </svg>
+                      Please configure API key for {sendProvider} in Provider Settings
+                    </p>
+                  )}
+                </div>
+
                 <div>
                   <label htmlFor="fromEmail" className="block text-sm font-medium text-slate-700 mb-2">
                     From Email
@@ -333,9 +426,10 @@ export default function Home() {
 
                 <button
                   type="button"
-                  className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 px-4 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md"
+                  disabled={!isProviderConfigured(sendProvider)}
+                  className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-400 disabled:cursor-not-allowed text-white font-medium py-3 px-4 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md"
                 >
-                  Send Emails
+                  Send Emails via {sendProvider}
                 </button>
               </div>
             </div>
@@ -351,7 +445,7 @@ export default function Home() {
                   <p className="text-slate-500 text-sm mt-1">Check if email addresses are valid and deliverable.</p>
                 </div>
                 <button
-                  onClick={() => setActiveTab('saved')}
+                  onClick={() => setShowImportToVerifyModal(true)}
                   className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition-all duration-200 font-medium text-sm shadow-sm hover:shadow-md"
                 >
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -694,6 +788,40 @@ email3@example.com"
         onClose={() => setShowSaveModal(false)}
         onSave={handleSaveBatch}
         emailCount={emails.length}
+      />
+
+      {/* Import to Verify Modal */}
+      {showImportToVerifyModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
+            <div className="p-6 border-b border-slate-200">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-semibold text-slate-900">Import Saved Emails to Verify</h3>
+                <button
+                  onClick={() => setShowImportToVerifyModal(false)}
+                  className="text-slate-400 hover:text-slate-600 transition-colors"
+                >
+                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
+              <SavedEmailsList
+                onImportToVerify={handleImportToVerify}
+                onRefresh={refreshSavedCount}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Email Provider Configuration Modal */}
+      <EmailProviderConfig
+        isOpen={showProviderConfig}
+        onClose={() => setShowProviderConfig(false)}
+        onSave={handleSaveProviderKeys}
       />
     </main>
   );

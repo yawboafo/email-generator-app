@@ -6,10 +6,13 @@ import formData from 'form-data';
 import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
 // @ts-ignore - Brevo SDK types might not be perfect
 import * as brevo from '@getbrevo/brevo';
+import * as postmark from 'postmark';
+import Mailjet from 'node-mailjet';
+import SparkPost from 'sparkpost';
 
 // Types
 interface SendEmailRequest {
-  provider: 'resend' | 'sendgrid' | 'mailgun' | 'ses' | 'brevo';
+  provider: 'resend' | 'sendgrid' | 'mailgun' | 'ses' | 'brevo' | 'postmark' | 'mailjet' | 'sparkpost';
   apiKey: string;
   from: string;
   to: string[];
@@ -21,6 +24,7 @@ interface SendEmailRequest {
   awsRegion?: string; // Required for SES
   awsAccessKeyId?: string; // Required for SES
   awsSecretAccessKey?: string; // Required for SES
+  mailjetApiSecret?: string; // Required for Mailjet
 }
 
 interface EmailResult {
@@ -251,6 +255,131 @@ async function sendWithBrevo(
   return results;
 }
 
+// Postmark Implementation
+async function sendWithPostmark(
+  apiKey: string,
+  from: string,
+  to: string[],
+  subject: string,
+  html: string
+): Promise<EmailResult[]> {
+  const client = new postmark.ServerClient(apiKey);
+  const results: EmailResult[] = [];
+
+  for (const email of to) {
+    try {
+      const response = await client.sendEmail({
+        From: from,
+        To: email,
+        Subject: subject,
+        HtmlBody: html,
+      });
+
+      results.push({
+        email,
+        success: true,
+        messageId: response.MessageID,
+      });
+    } catch (error: any) {
+      results.push({
+        email,
+        success: false,
+        error: error.message || 'Unknown error',
+      });
+    }
+  }
+
+  return results;
+}
+
+// Mailjet Implementation
+async function sendWithMailjet(
+  apiKey: string,
+  apiSecret: string,
+  from: string,
+  to: string[],
+  subject: string,
+  html: string
+): Promise<EmailResult[]> {
+  const mailjet = Mailjet.apiConnect(apiKey, apiSecret);
+  const results: EmailResult[] = [];
+
+  for (const email of to) {
+    try {
+      const response = await mailjet.post('send', { version: 'v3.1' }).request({
+        Messages: [
+          {
+            From: {
+              Email: from.includes('<') ? from.match(/<(.+?)>/)?.[1] || from : from,
+              Name: from.includes('<') ? from.split('<')[0].trim() : from,
+            },
+            To: [
+              {
+                Email: email,
+              },
+            ],
+            Subject: subject,
+            HTMLPart: html,
+          },
+        ],
+      });
+
+      results.push({
+        email,
+        success: true,
+        messageId: (response.body as any)?.Messages?.[0]?.To?.[0]?.MessageID || 'sent',
+      });
+    } catch (error: any) {
+      results.push({
+        email,
+        success: false,
+        error: error.message || 'Unknown error',
+      });
+    }
+  }
+
+  return results;
+}
+
+// SparkPost Implementation
+async function sendWithSparkPost(
+  apiKey: string,
+  from: string,
+  to: string[],
+  subject: string,
+  html: string
+): Promise<EmailResult[]> {
+  const client = new SparkPost(apiKey);
+  const results: EmailResult[] = [];
+
+  for (const email of to) {
+    try {
+      const response = await client.transmissions.send({
+        content: {
+          from: from,
+          subject: subject,
+          html: html,
+        },
+        recipients: [{ address: email }],
+      });
+
+      results.push({
+        email,
+        success: true,
+        messageId: (response.results as any)?.id || 'sent',
+      });
+    } catch (error: any) {
+      results.push({
+        email,
+        success: false,
+        error: error.message || 'Unknown error',
+      });
+    }
+  }
+
+  return results;
+}
+
 // Main POST Handler
 export async function POST(request: NextRequest) {
   try {
@@ -307,6 +436,24 @@ export async function POST(request: NextRequest) {
 
       case 'brevo':
         results = await sendWithBrevo(apiKey, from, to, subject, html);
+        break;
+
+      case 'postmark':
+        results = await sendWithPostmark(apiKey, from, to, subject, html);
+        break;
+
+      case 'mailjet':
+        if (!body.mailjetApiSecret) {
+          return NextResponse.json(
+            { error: 'Mailjet API Secret is required' },
+            { status: 400 }
+          );
+        }
+        results = await sendWithMailjet(apiKey, body.mailjetApiSecret, from, to, subject, html);
+        break;
+
+      case 'sparkpost':
+        results = await sendWithSparkPost(apiKey, from, to, subject, html);
         break;
 
       default:
