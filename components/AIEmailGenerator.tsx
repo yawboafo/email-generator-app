@@ -3,8 +3,7 @@
 import { useState, useEffect } from 'react';
 import { EXAMPLE_PROMPTS, getSupportedCountriesCount } from '@/lib/aiEmailGenerator';
 import allCountries from '@/data/countries.json';
-import providers from '@/data/providers.json';
-import type { GenerationMethod } from '@/types';
+import type { GenerationMethod, Provider } from '@/types';
 
 interface AIEmailGeneratorProps {
   onGenerate: (emails: string[], meta: any) => void;
@@ -15,15 +14,36 @@ interface AIEmailGeneratorProps {
 export default function AIEmailGenerator({ onGenerate, isLoading, setIsLoading }: AIEmailGeneratorProps) {
   const [prompt, setPrompt] = useState<string>('');
   const [count, setCount] = useState<number>(100);
-  const [selectedProviders, setSelectedProviders] = useState<string[]>(['gmail.com', 'yahoo.com', 'outlook.com']);
+  const [selectedProviders, setSelectedProviders] = useState<string[]>([]);
+  const [providerList, setProviderList] = useState<Provider[]>([]);
+  const [loadingProviders, setLoadingProviders] = useState(true);
   const [error, setError] = useState<string>('');
   const [showExamples, setShowExamples] = useState<boolean>(false);
   const [countriesCount, setCountriesCount] = useState<number>(0);
   const [showCountries, setShowCountries] = useState<boolean>(false);
-  const [generationMethod, setGenerationMethod] = useState<GenerationMethod>('deepseek');
+  const [generationMethod, setGenerationMethod] = useState<GenerationMethod>('pattern');
   const countries = allCountries as Array<{ code: string; name: string }>;
 
-  const providerList = providers as Array<{ id: string; name: string; domain: string }>;
+  // Fetch providers from database
+  useEffect(() => {
+    async function fetchProviders() {
+      try {
+        const res = await fetch('/api/providers');
+        const data = await res.json();
+        if (data.providers && data.providers.length > 0) {
+          setProviderList(data.providers);
+          // Auto-select top 3 providers by default
+          const defaultProviders = data.providers.slice(0, 3).map((p: Provider) => p.domain);
+          setSelectedProviders(defaultProviders);
+        }
+      } catch (err) {
+        console.error('Failed to fetch providers:', err);
+      } finally {
+        setLoadingProviders(false);
+      }
+    }
+    fetchProviders();
+  }, []);
 
   useEffect(() => {
     setCountriesCount(getSupportedCountriesCount());
@@ -130,7 +150,28 @@ export default function AIEmailGenerator({ onGenerate, isLoading, setIsLoading }
         <label className="block text-sm font-semibold text-gray-900 mb-3">
           🤖 AI Generation Method
         </label>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <label className={`flex items-start space-x-3 p-4 border-2 rounded-lg cursor-pointer transition-all ${
+            generationMethod === 'pattern' 
+              ? 'border-blue-500 bg-white shadow-md' 
+              : 'border-gray-200 bg-white hover:border-blue-300'
+          }`}>
+            <input
+              type="radio"
+              name="generationMethod"
+              value="pattern"
+              checked={generationMethod === 'pattern'}
+              onChange={(e) => setGenerationMethod(e.target.value as GenerationMethod)}
+              className="mt-1 text-blue-600 focus:ring-blue-500"
+            />
+            <div className="flex-1">
+              <div className="font-semibold text-gray-900">Pattern-Based (Original)</div>
+              <div className="text-xs text-gray-600 mt-1">
+                Fast, reliable generation using our original prompt-based system
+              </div>
+            </div>
+          </label>
+
           <label className={`flex items-start space-x-3 p-4 border-2 rounded-lg cursor-pointer transition-all ${
             generationMethod === 'deepseek' 
               ? 'border-purple-500 bg-white shadow-md' 
@@ -284,27 +325,34 @@ export default function AIEmailGenerator({ onGenerate, isLoading, setIsLoading }
         <label className="block text-sm font-medium text-gray-900 mb-2">
           Email Providers
         </label>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-          {providerList.map((provider) => (
-            <label
-              key={provider.id}
-              className={`flex items-center space-x-2 p-2 border-2 rounded cursor-pointer transition-all ${
-                selectedProviders.includes(provider.domain)
-                  ? 'border-purple-500 bg-purple-50'
-                  : 'border-gray-300 hover:bg-gray-50'
-              }`}
-            >
-              <input
-                type="checkbox"
-                checked={selectedProviders.includes(provider.domain)}
-                onChange={() => handleProviderToggle(provider.domain)}
-                className="rounded text-purple-600 focus:ring-purple-500"
-                disabled={isLoading}
-              />
-              <span className="text-sm text-gray-900">{provider.name}</span>
-            </label>
-          ))}
-        </div>
+        {loadingProviders ? (
+          <div className="text-center py-4">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+            <p className="text-sm text-gray-600 mt-2">Loading providers...</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+            {providerList.map((provider) => (
+              <label
+                key={provider.id}
+                className={`flex items-center space-x-2 p-2 border-2 rounded cursor-pointer transition-all ${
+                  selectedProviders.includes(provider.domain)
+                    ? 'border-purple-500 bg-purple-50'
+                    : 'border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={selectedProviders.includes(provider.domain)}
+                  onChange={() => handleProviderToggle(provider.domain)}
+                  className="rounded text-purple-600 focus:ring-purple-500"
+                  disabled={isLoading}
+                />
+                <span className="text-sm text-gray-900">{provider.name}</span>
+              </label>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Generate Button */}
