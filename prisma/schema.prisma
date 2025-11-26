@@ -1,0 +1,123 @@
+// This is your Prisma schema file
+// Learn more: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Countries table - stores country metadata
+model Country {
+  id        String      @id @default(cuid())
+  code      String      @unique // ISO country code (US, UK, GH, NG, IN, CA)
+  name      String      // Full country name
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  
+  // Relations
+  firstNames FirstName[]
+  lastNames  LastName[]
+  cities     City[]
+
+  @@index([code])
+}
+
+// First names table - stores first names by country and gender
+model FirstName {
+  id        String   @id @default(cuid())
+  name      String
+  gender    String   // "male", "female", "neutral"
+  countryId String
+  country   Country  @relation(fields: [countryId], references: [id], onDelete: Cascade)
+  frequency Int      @default(1) // For weighted random selection (higher = more common)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([name, countryId, gender])
+  @@index([countryId, gender])
+  @@index([countryId])
+}
+
+// Last names/surnames table
+model LastName {
+  id        String   @id @default(cuid())
+  name      String
+  countryId String
+  country   Country  @relation(fields: [countryId], references: [id], onDelete: Cascade)
+  frequency Int      @default(1) // For weighted random selection
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([name, countryId])
+  @@index([countryId])
+}
+
+// Cities table - stores cities by country
+model City {
+  id        String   @id @default(cuid())
+  name      String
+  countryId String
+  country   Country  @relation(fields: [countryId], references: [id], onDelete: Cascade)
+  population Int?    // Optional: for weighted selection
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([name, countryId])
+  @@index([countryId])
+}
+
+// Email providers table
+model EmailProvider {
+  id         String   @id @default(cuid())
+  providerId String   @unique // "gmail", "yahoo", "outlook"
+  name       String   // "Gmail", "Yahoo", "Outlook"
+  domain     String   // "gmail.com", "yahoo.com"
+  popularity Int      @default(50) // Percentage weight for distribution
+  active     Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([active])
+}
+
+// Pattern elements table - stores reusable pattern components
+model PatternElement {
+  id        String   @id @default(cuid())
+  type      String   // "petName", "city", "hobby", "interest"
+  value     String   // The actual pattern element
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([type, value])
+  @@index([type])
+}
+
+// Optional: Email generation history for analytics
+model EmailGeneration {
+  id            String   @id @default(cuid())
+  emailAddress  String
+  countryCode   String
+  pattern       String
+  provider      String
+  createdAt     DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([countryCode])
+}
+
+// Optional: Saved emails (for your SavedEmailsList feature)
+model SavedEmail {
+  id           String   @id @default(cuid())
+  emailAddress String
+  name         String?
+  countryCode  String?
+  provider     String?
+  notes        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([createdAt])
+}

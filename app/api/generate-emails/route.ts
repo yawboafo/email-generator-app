@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { generateEmails, validateRequest } from '@/lib/emailGenerator';
+import { generateEmails, validateRequest } from '@/lib/emailGeneratorDb';
 import { checkRateLimit, getClientIdentifier } from '@/lib/rateLimit';
 import type { GenerateEmailsRequest, GenerateEmailsResponse } from '@/types';
 
-export const runtime = 'edge';
+// Remove edge runtime since Prisma requires Node.js runtime
+// export const runtime = 'edge';
 
 export async function POST(request: NextRequest) {
   try {
@@ -47,8 +48,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate emails
-    const emails = generateEmails(
+    // Generate emails (now async with database)
+    const emails = await generateEmails(
       body.count,
       body.providers,
       body.country,
