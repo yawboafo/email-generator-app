@@ -28,6 +28,12 @@ export default function Home() {
   const [showProviderConfig, setShowProviderConfig] = useState(false);
   const [sendProvider, setSendProvider] = useState<'resend' | 'sendgrid' | 'mailgun' | 'brevo' | 'ses' | 'postmark' | 'mailjet' | 'sparkpost'>('resend');
   const [providerKeys, setProviderKeys] = useState<EmailProviderKeys>({});
+  const [isSending, setIsSending] = useState(false);
+  const [sendResults, setSendResults] = useState<any[]>([]);
+  const [sendStats, setSendStats] = useState<any>(null);
+  const [fromEmail, setFromEmail] = useState('');
+  const [emailSubject, setEmailSubject] = useState('');
+  const [emailMessage, setEmailMessage] = useState('');
   const [currentGenerationParams, setCurrentGenerationParams] = useState<{
     country: Country;
     pattern: NamePattern;
@@ -109,6 +115,103 @@ export default function Home() {
 
   const refreshSavedCount = () => {
     setSavedBatchCount(getSavedEmailBatches().length);
+  };
+
+  const handleSendEmails = async () => {
+    if (!fromEmail.trim()) {
+      alert('Please enter a sender email address.');
+      return;
+    }
+    if (!emailSubject.trim()) {
+      alert('Please enter an email subject.');
+      return;
+    }
+    if (!emailMessage.trim()) {
+      alert('Please enter an email message.');
+      return;
+    }
+    
+    const recipientList = sendRecipients
+      .split(/[,\n]/)
+      .map(e => e.trim())
+      .filter(e => e.length > 0);
+    
+    if (recipientList.length === 0) {
+      alert('Please enter at least one recipient email address.');
+      return;
+    }
+
+    if (!isProviderConfigured(sendProvider)) {
+      alert(`Please configure ${sendProvider} in Provider Settings before sending.`);
+      return;
+    }
+
+    setIsSending(true);
+    setSendResults([]);
+    setSendStats(null);
+
+    try {
+      const requestBody: any = {
+        provider: sendProvider,
+        from: fromEmail,
+        to: recipientList,
+        subject: emailSubject,
+        html: emailMessage.replace(/\n/g, '<br>'),
+        text: emailMessage,
+      };
+
+      // Add provider-specific credentials
+      switch (sendProvider) {
+        case 'resend':
+          requestBody.apiKey = providerKeys.resend;
+          break;
+        case 'sendgrid':
+          requestBody.apiKey = providerKeys.sendgrid;
+          break;
+        case 'mailgun':
+          requestBody.apiKey = providerKeys.mailgun?.apiKey;
+          requestBody.mailgunDomain = providerKeys.mailgun?.domain;
+          break;
+        case 'brevo':
+          requestBody.apiKey = providerKeys.brevo;
+          break;
+        case 'ses':
+          requestBody.awsAccessKeyId = providerKeys.ses?.accessKeyId;
+          requestBody.awsSecretAccessKey = providerKeys.ses?.secretAccessKey;
+          requestBody.awsRegion = providerKeys.ses?.region;
+          break;
+        case 'postmark':
+          requestBody.apiKey = providerKeys.postmark;
+          break;
+        case 'mailjet':
+          requestBody.apiKey = providerKeys.mailjet?.apiKey;
+          requestBody.mailjetApiSecret = providerKeys.mailjet?.apiSecret;
+          break;
+        case 'sparkpost':
+          requestBody.apiKey = providerKeys.sparkpost;
+          break;
+      }
+
+      const response = await fetch('/api/send-emails', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody),
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to send emails');
+      }
+
+      setSendResults(data.results || []);
+      setSendStats(data.stats || null);
+    } catch (error) {
+      console.error('Send emails error:', error);
+      alert(`Error sending emails: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsSending(false);
+    }
   };
 
   const handleVerifyEmails = async () => {
@@ -376,6 +479,8 @@ export default function Home() {
                   <input
                     type="email"
                     id="fromEmail"
+                    value={fromEmail}
+                    onChange={(e) => setFromEmail(e.target.value)}
                     placeholder="sender@example.com"
                     className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-transparent text-slate-900 bg-white placeholder-slate-400 transition-all duration-200"
                   />
@@ -388,6 +493,8 @@ export default function Home() {
                   <input
                     type="text"
                     id="subject"
+                    value={emailSubject}
+                    onChange={(e) => setEmailSubject(e.target.value)}
                     placeholder="Email subject"
                     className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-transparent text-slate-900 bg-white placeholder-slate-400 transition-all duration-200"
                   />
@@ -399,6 +506,8 @@ export default function Home() {
                   </label>
                   <textarea
                     id="message"
+                    value={emailMessage}
+                    onChange={(e) => setEmailMessage(e.target.value)}
                     rows={6}
                     placeholder="Your email message..."
                     className="w-full px-4 py-2.5 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-transparent text-slate-900 bg-white placeholder-slate-400 transition-all duration-200 resize-none"
@@ -407,7 +516,7 @@ export default function Home() {
 
                 <div>
                   <label htmlFor="recipients" className="block text-sm font-medium text-slate-700 mb-2">
-                    Recipients (comma-separated)
+                    Recipients (comma-separated or one per line)
                   </label>
                   <textarea
                     id="recipients"
@@ -419,18 +528,98 @@ export default function Home() {
                   />
                   {sendRecipients && (
                     <p className="text-sm text-slate-500 mt-2">
-                      {sendRecipients.split(',').filter(e => e.trim()).length} recipients selected
+                      {sendRecipients.split(/[,\n]/).filter(e => e.trim()).length} recipients selected
                     </p>
                   )}
                 </div>
 
                 <button
                   type="button"
-                  disabled={!isProviderConfigured(sendProvider)}
-                  className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-400 disabled:cursor-not-allowed text-white font-medium py-3 px-4 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md"
+                  onClick={handleSendEmails}
+                  disabled={!isProviderConfigured(sendProvider) || isSending}
+                  className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-400 disabled:cursor-not-allowed text-white font-medium py-3 px-4 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md flex items-center justify-center gap-2"
                 >
-                  Send Emails via {sendProvider}
+                  {isSending ? (
+                    <>
+                      <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Sending...
+                    </>
+                  ) : (
+                    <>Send Emails via {sendProvider}</>
+                  )}
                 </button>
+
+                {/* Send Results */}
+                {sendStats && (
+                  <div className="mt-8 space-y-4">
+                    <h3 className="text-lg font-semibold text-slate-900">Send Results</h3>
+                    
+                    {/* Stats Cards */}
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
+                        <div className="text-2xl font-bold text-slate-900">{sendStats.total}</div>
+                        <div className="text-sm text-slate-600">Total</div>
+                      </div>
+                      <div className="bg-green-50 rounded-xl p-4 border border-green-200">
+                        <div className="text-2xl font-bold text-green-700">{sendStats.successful}</div>
+                        <div className="text-sm text-green-600">Sent</div>
+                      </div>
+                      <div className="bg-red-50 rounded-xl p-4 border border-red-200">
+                        <div className="text-2xl font-bold text-red-700">{sendStats.failed}</div>
+                        <div className="text-sm text-red-600">Failed</div>
+                      </div>
+                    </div>
+
+                    {/* Detailed Results Table */}
+                    <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                      <div className="overflow-x-auto max-h-96">
+                        <table className="w-full">
+                          <thead className="bg-slate-50 sticky top-0">
+                            <tr>
+                              <th className="text-left py-3 px-4 font-semibold text-slate-700 text-sm">Email</th>
+                              <th className="text-left py-3 px-4 font-semibold text-slate-700 text-sm">Status</th>
+                              <th className="text-left py-3 px-4 font-semibold text-slate-700 text-sm">Message ID / Error</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100">
+                            {sendResults.map((result, idx) => (
+                              <tr key={idx} className={result.success ? 'hover:bg-green-50/50' : 'hover:bg-red-50/50'}>
+                                <td className="py-3 px-4 text-slate-900 font-mono text-sm">{result.email}</td>
+                                <td className="py-3 px-4">
+                                  {result.success ? (
+                                    <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 rounded-lg text-xs font-medium">
+                                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                      </svg>
+                                      Sent
+                                    </span>
+                                  ) : (
+                                    <span className="inline-flex items-center gap-1 px-2 py-1 bg-red-100 text-red-700 rounded-lg text-xs font-medium">
+                                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                                      </svg>
+                                      Failed
+                                    </span>
+                                  )}
+                                </td>
+                                <td className="py-3 px-4 text-slate-600 text-sm">
+                                  {result.success ? (
+                                    <span className="font-mono text-xs text-slate-500">{result.messageId || 'Sent'}</span>
+                                  ) : (
+                                    <span className="text-red-600">{result.error}</span>
+                                  )}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
