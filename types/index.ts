@@ -2,6 +2,8 @@ export type Gender = 'male' | 'female' | 'neutral' | 'any';
 
 export type Country = 'US' | 'GH' | 'UK' | 'NG' | 'IN' | 'CA';
 
+export type GenerationMethod = 'pattern' | 'deepseek' | 'openai';
+
 export type NamePattern = 
   | 'firstname.lastname' 
   | 'firstnamelastname' 
@@ -40,6 +42,7 @@ export interface GenerateEmailsRequest {
   includeNumbers: boolean;
   numberRange: [number, number];
   allowedCharacters: AllowedCharacters;
+  method?: GenerationMethod;
 }
 
 export interface GenerateEmailsResponse {

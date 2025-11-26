@@ -1,6 +1,161 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { aiEmailGenerator } from '@/lib/aiEmailGenerator';
 import { checkRateLimit } from '@/lib/rateLimit';
+import type { GenerationMethod } from '@/types';
+
+/**
+ * Generate emails using DeepSeek AI
+ */
+async function generateWithDeepSeek(prompt: string, count: number, providers: string[]): Promise<string[]> {
+  const apiKey = process.env.DEEPSEEK_API_KEY;
+  
+  if (!apiKey) {
+    throw new Error('DeepSeek API key not configured');
+  }
+
+  const aiPrompt = buildAIPrompt(prompt, count, providers);
+  
+  const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: 'deepseek-chat',
+      messages: [
+        {
+          role: 'system',
+          content: 'You are an expert email address generator. Generate realistic, creative email addresses based on user requirements. Return ONLY a JSON array of email addresses, nothing else. No explanations, no markdown, just the array.'
+        },
+        {
+          role: 'user',
+          content: aiPrompt
+        }
+      ],
+      temperature: 0.8,
+      max_tokens: 4000,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`DeepSeek API error: ${errorText}`);
+  }
+
+  const data = await response.json();
+  const content = data.choices?.[0]?.message?.content;
+  
+  if (!content) {
+    throw new Error('No content from DeepSeek');
+  }
+
+  return parseAIResponse(content, count, providers);
+}
+
+/**
+ * Generate emails using OpenAI
+ */
+async function generateWithOpenAI(prompt: string, count: number, providers: string[]): Promise<string[]> {
+  const apiKey = process.env.OPENAI_API_KEY;
+  
+  if (!apiKey) {
+    throw new Error('OpenAI API key not configured');
+  }
+
+  const aiPrompt = buildAIPrompt(prompt, count, providers);
+  
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: 'gpt-4o-mini',
+      messages: [
+        {
+          role: 'system',
+          content: 'You are an expert email address generator. Generate realistic, creative email addresses based on user requirements. Return ONLY a JSON array of email addresses, nothing else. No explanations, no markdown, just the array.'
+        },
+        {
+          role: 'user',
+          content: aiPrompt
+        }
+      ],
+      temperature: 0.8,
+      max_tokens: 4000,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`OpenAI API error: ${errorText}`);
+  }
+
+  const data = await response.json();
+  const content = data.choices?.[0]?.message?.content;
+  
+  if (!content) {
+    throw new Error('No content from OpenAI');
+  }
+
+  return parseAIResponse(content, count, providers);
+}
+
+/**
+ * Build prompt for AI
+ */
+function buildAIPrompt(userPrompt: string, count: number, providers: string[]): string {
+  let prompt = `User Request: ${userPrompt}\n\n`;
+  prompt += `Generate ${count} unique, realistic email addresses.\n`;
+  prompt += `Domains: ${providers.join(', ')}\n`;
+  prompt += `\nRequirements:\n`;
+  prompt += `1. All email addresses must be unique\n`;
+  prompt += `2. Match the user's description (demographics, profession, country, etc.)\n`;
+  prompt += `3. Use realistic and commonly used username patterns\n`;
+  prompt += `4. Distribute evenly across all provided domains\n`;
+  prompt += `5. Return ONLY a JSON array: ["email1@domain.com", "email2@domain.com", ...]`;
+  return prompt;
+}
+
+/**
+ * Parse AI response
+ */
+function parseAIResponse(content: string, count: number, providers: string[]): string[] {
+  try {
+    // Remove markdown code blocks if present
+    content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    
+    const jsonMatch = content.match(/\[[\s\S]*\]/);
+    if (!jsonMatch) {
+      throw new Error('No JSON array found');
+    }
+    
+    const parsed = JSON.parse(jsonMatch[0]);
+    
+    if (!Array.isArray(parsed)) {
+      throw new Error('Response not an array');
+    }
+    
+    const emails = parsed
+      .filter((e: any) => typeof e === 'string')
+      .map((e: string) => e.trim().toLowerCase())
+      .filter((e: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e))
+      .filter((e: string) => providers.includes(e.split('@')[1]));
+    
+    const unique = [...new Set(emails)];
+    
+    if (unique.length < Math.min(count * 0.5, 5)) {
+      throw new Error(`Insufficient valid emails: ${unique.length}/${count}`);
+    }
+    
+    return unique.slice(0, count);
+  } catch (error) {
+    console.error('Parse error:', error, 'Content:', content);
+    throw new Error('Failed to parse AI response');
+  }
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,7 +174,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { prompt, count, providers } = body;
+    const { prompt, count, providers, method = 'deepseek' } = body;
 
     // Validation
     if (!prompt || typeof prompt !== 'string') {
@@ -43,22 +198,32 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate emails using AI
-    const result = await aiEmailGenerator({
-      prompt,
-      count,
-      providers
-    });
+    // Generate emails using selected AI method
+    let emails: string[];
+    
+    if (method === 'openai') {
+      emails = await generateWithOpenAI(prompt, count, providers);
+    } else if (method === 'deepseek') {
+      emails = await generateWithDeepSeek(prompt, count, providers);
+    } else {
+      // Fallback to pattern-based AI (existing behavior)
+      const result = await aiEmailGenerator({
+        prompt,
+        count,
+        providers
+      });
+      emails = result.emails;
+    }
 
     return NextResponse.json({
-      emails: result.emails,
+      emails,
       meta: {
-        count: result.metadata.count,
-        prompt: result.metadata.prompt,
-        patterns: result.metadata.patterns,
-        remaining
-      },
-      contexts: result.metadata.contexts.slice(0, 10) // Return first 10 contexts as examples
+        count: emails.length,
+        prompt,
+        patterns: providers,
+        remaining,
+        method
+      }
     });
 
   } catch (error) {

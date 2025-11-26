@@ -10,8 +10,12 @@ export async function GET() {
       prisma.city.count(),
       prisma.emailProvider.count(),
       prisma.patternElement.count(),
+      prisma.pattern.count(),
       prisma.savedEmail.count(),
       prisma.emailGeneration.count(),
+      prisma.verifiedEmail.count(),
+      prisma.verifiedEmail.count({ where: { status: 'valid' } }),
+      prisma.verifiedEmail.count({ where: { status: 'risky' } }),
     ]);
 
     // Get sample data
@@ -27,8 +31,12 @@ export async function GET() {
         cities: stats[3],
         emailProviders: stats[4],
         patternElements: stats[5],
-        savedEmails: stats[6],
-        emailGenerations: stats[7],
+        patterns: stats[6],
+        savedEmails: stats[7],
+        emailGenerations: stats[8],
+        verifiedEmails: stats[9],
+        validEmails: stats[10],
+        riskyEmails: stats[11],
       },
       countries,
     });

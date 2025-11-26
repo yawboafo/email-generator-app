@@ -5,7 +5,7 @@ import {
   AgeRange, 
   AllowedCharacters
 } from '@/types';
-import prisma from './prisma';
+import { prisma } from './prisma';
 
 /**
  * Get a random item from an array
@@ -42,7 +42,7 @@ export async function generateFirstName(country: Country, gender: Gender): Promi
   const count = await prisma.firstName.count({ where: whereClause });
   
   if (count === 0) {
-    throw new Error(`No first names found for ${country} and gender ${gender}`);
+    throw new Error(`No first names found for ${country} and gender ${gender}. Please import name data from the admin panel first.`);
   }
 
   const skip = Math.floor(Math.random() * count);
@@ -72,7 +72,7 @@ export async function generateLastName(country: Country): Promise<string> {
   });
   
   if (count === 0) {
-    throw new Error(`No last names found for ${country}`);
+    throw new Error(`No last names found for ${country}. Please import name data from the admin panel first.`);
   }
 
   const skip = Math.floor(Math.random() * count);
@@ -133,6 +133,67 @@ export async function getRandomPatternElement(type: string): Promise<string> {
   });
 
   return element?.value || 'default';
+}
+
+/**
+ * Parse and resolve a pattern template
+ * Replaces placeholders like {firstName}, {colors}, {things} with actual values
+ */
+async function parsePatternTemplate(
+  template: string,
+  country: Country,
+  gender: Gender,
+  ageRange: AgeRange,
+  interests: string[]
+): Promise<string> {
+  let result = template;
+  
+  // Extract all placeholders from template
+  const placeholders = template.match(/\{([^}]+)\}/g) || [];
+  
+  for (const placeholder of placeholders) {
+    const key = placeholder.slice(1, -1); // Remove { and }
+    let value = '';
+    
+    switch (key) {
+      case 'firstName':
+        value = (await generateFirstName(country, gender)).toLowerCase();
+        break;
+      case 'lastName':
+        value = (await generateLastName(country)).toLowerCase();
+        break;
+      case 'firstInitial':
+        value = (await generateFirstName(country, gender))[0].toLowerCase();
+        break;
+      case 'lastInitial':
+        value = (await generateLastName(country))[0].toLowerCase();
+        break;
+      case 'city':
+        value = await getRandomCity(country);
+        break;
+      case 'nickname':
+        value = await generateNickname(interests, ageRange, country, gender);
+        break;
+      case 'random':
+        // For random, pick a random simple pattern
+        const randomPatterns = [
+          '{firstName}.{lastName}',
+          '{firstName}{lastName}',
+          '{firstName}_{lastName}',
+          '{firstName}{lastInitial}',
+        ];
+        const randomTemplate = getRandomItem(randomPatterns);
+        value = await parsePatternTemplate(randomTemplate, country, gender, ageRange, interests);
+        break;
+      default:
+        // Try to get from PatternElement table
+        value = await getRandomPatternElement(key);
+    }
+    
+    result = result.replace(placeholder, value);
+  }
+  
+  return result;
 }
 
 /**
@@ -238,48 +299,26 @@ async function generateLocalPart(
   const firstName = (await generateFirstName(country, gender)).toLowerCase();
   const lastName = (await generateLastName(country)).toLowerCase();
   
-  let localPart = '';
+  // Look up pattern template from database
+  const patternRecord = await prisma.pattern.findUnique({
+    where: { name: pattern, active: true },
+  });
 
-  switch (pattern) {
-    case 'firstname.lastname':
-      localPart = `${firstName}.${lastName}`;
-      break;
-    case 'firstnamelastname':
-      localPart = `${firstName}${lastName}`;
-      break;
-    case 'firstinitiallastname':
-      localPart = `${firstName[0]}${lastName}`;
-      break;
-    case 'firstname_lastname':
-      localPart = `${firstName}_${lastName}`;
-      break;
-    case 'firstnamelastinitial':
-      localPart = `${firstName}${lastName[0]}`;
-      break;
-    case 'nickname':
-      localPart = await generateNickname(interests, ageRange, country, gender);
-      break;
-    case 'petname':
-      localPart = await getRandomPatternElement('petNames');
-      break;
-    case 'city':
-      localPart = await getRandomCity(country);
-      break;
-    case 'hobby':
-      localPart = await getRandomPatternElement('hobbies');
-      break;
-    case 'random':
-    default:
-      // Random pattern selection
-      const randomPatterns = [
-        `${firstName}.${lastName}`,
-        `${firstName}${lastName}`,
-        `${firstName}_${lastName}`,
-        `${firstName}${lastName[0]}`,
-        await getRandomPatternElement('petNames'),
-        await getRandomCity(country),
-      ];
-      localPart = getRandomItem(randomPatterns);
+  let localPart = '';
+  
+  if (patternRecord) {
+    // Use dynamic template parsing
+    localPart = await parsePatternTemplate(
+      patternRecord.template,
+      country,
+      gender,
+      ageRange,
+      interests
+    );
+  } else {
+    // Fallback to default pattern if not found
+    console.warn(`Pattern "${pattern}" not found in database, using default`);
+    localPart = `${firstName}.${lastName}`;
   }
 
   // Apply character restrictions
@@ -296,12 +335,17 @@ async function generateLocalPart(
 
 /**
  * Get active email providers from database
+ * @param providerDomainsOrIds - Can be domains (gmail.com) or provider IDs (gmail)
  */
-export async function getActiveProviders(providerIds?: string[]): Promise<Array<{ domain: string, popularity: number }>> {
+export async function getActiveProviders(providerDomainsOrIds?: string[]): Promise<Array<{ domain: string, popularity: number }>> {
   const where: any = { active: true };
   
-  if (providerIds && providerIds.length > 0) {
-    where.providerId = { in: providerIds };
+  if (providerDomainsOrIds && providerDomainsOrIds.length > 0) {
+    // Support both domains (gmail.com) and provider IDs (gmail)
+    where.OR = [
+      { domain: { in: providerDomainsOrIds } },
+      { providerId: { in: providerDomainsOrIds } }
+    ];
   }
 
   const providers = await prisma.emailProvider.findMany({

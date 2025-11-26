@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { EXAMPLE_PROMPTS, getSupportedCountriesCount } from '@/lib/aiEmailGenerator';
 import allCountries from '@/data/countries.json';
 import providers from '@/data/providers.json';
+import type { GenerationMethod } from '@/types';
 
 interface AIEmailGeneratorProps {
   onGenerate: (emails: string[], meta: any) => void;
@@ -19,6 +20,7 @@ export default function AIEmailGenerator({ onGenerate, isLoading, setIsLoading }
   const [showExamples, setShowExamples] = useState<boolean>(false);
   const [countriesCount, setCountriesCount] = useState<number>(0);
   const [showCountries, setShowCountries] = useState<boolean>(false);
+  const [generationMethod, setGenerationMethod] = useState<GenerationMethod>('deepseek');
   const countries = allCountries as Array<{ code: string; name: string }>;
 
   const providerList = providers as Array<{ id: string; name: string; domain: string }>;
@@ -70,7 +72,8 @@ export default function AIEmailGenerator({ onGenerate, isLoading, setIsLoading }
         body: JSON.stringify({
           prompt,
           count,
-          providers: selectedProviders
+          providers: selectedProviders,
+          method: generationMethod
         }),
       });
 
@@ -119,6 +122,56 @@ export default function AIEmailGenerator({ onGenerate, isLoading, setIsLoading }
             <p className="text-xs opacity-80 mt-1">Currently {countriesCount}+ with built-in support for any country name</p>
           </div>
           <div className="text-4xl">🌍</div>
+        </div>
+      </div>
+
+      {/* Generation Method Selection */}
+      <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-4 rounded-lg border border-blue-200">
+        <label className="block text-sm font-semibold text-gray-900 mb-3">
+          🤖 AI Generation Method
+        </label>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <label className={`flex items-start space-x-3 p-4 border-2 rounded-lg cursor-pointer transition-all ${
+            generationMethod === 'deepseek' 
+              ? 'border-purple-500 bg-white shadow-md' 
+              : 'border-gray-200 bg-white hover:border-purple-300'
+          }`}>
+            <input
+              type="radio"
+              name="generationMethod"
+              value="deepseek"
+              checked={generationMethod === 'deepseek'}
+              onChange={(e) => setGenerationMethod(e.target.value as GenerationMethod)}
+              className="mt-1 text-purple-600 focus:ring-purple-500"
+            />
+            <div className="flex-1">
+              <div className="font-semibold text-gray-900">DeepSeek AI</div>
+              <div className="text-xs text-gray-600 mt-1">
+                AI-powered creative email generation with natural variations
+              </div>
+            </div>
+          </label>
+
+          <label className={`flex items-start space-x-3 p-4 border-2 rounded-lg cursor-pointer transition-all ${
+            generationMethod === 'openai' 
+              ? 'border-green-500 bg-white shadow-md' 
+              : 'border-gray-200 bg-white hover:border-green-300'
+          }`}>
+            <input
+              type="radio"
+              name="generationMethod"
+              value="openai"
+              checked={generationMethod === 'openai'}
+              onChange={(e) => setGenerationMethod(e.target.value as GenerationMethod)}
+              className="mt-1 text-green-600 focus:ring-green-500"
+            />
+            <div className="flex-1">
+              <div className="font-semibold text-gray-900">OpenAI</div>
+              <div className="text-xs text-gray-600 mt-1">
+                GPT-powered intelligent email creation with context awareness
+              </div>
+            </div>
+          </label>
         </div>
       </div>
 

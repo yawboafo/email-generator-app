@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { 
   Country, 
   Gender, 
@@ -9,7 +9,6 @@ import type {
   Provider,
   GenerateEmailsRequest 
 } from '@/types';
-import providers from '@/data/providers.json';
 import allCountries from '@/data/countries.json';
 
 interface EmailFormProps {
@@ -20,7 +19,11 @@ interface EmailFormProps {
 
 export default function EmailForm({ onGenerate, isLoading, setIsLoading }: EmailFormProps) {
   const [count, setCount] = useState<number>(50);
-  const [selectedProviders, setSelectedProviders] = useState<string[]>(['gmail.com', 'yahoo.com', 'outlook.com']);
+  const [selectedProviders, setSelectedProviders] = useState<string[]>([]);
+  const [providerList, setProviderList] = useState<Provider[]>([]);
+  const [loadingProviders, setLoadingProviders] = useState(true);
+  const [patternList, setPatternList] = useState<Array<{name: string; template: string; description: string; category: string}>>([]);
+  const [loadingPatterns, setLoadingPatterns] = useState(true);
   const [country, setCountry] = useState<Country>('US');
   const [ageRange, setAgeRange] = useState<AgeRange>('26-35');
   const [gender, setGender] = useState<Gender>('any');
@@ -35,9 +38,52 @@ export default function EmailForm({ onGenerate, isLoading, setIsLoading }: Email
   const [allowDot, setAllowDot] = useState<boolean>(true);
   const [error, setError] = useState<string>('');
   const [countrySearch, setCountrySearch] = useState<string>('');
+  const [providersExpanded, setProvidersExpanded] = useState(false);
 
-  const providerList = providers as Provider[];
   const countriesList = allCountries as Array<{ code: string; name: string }>;
+  
+  // Fetch providers from database
+  useEffect(() => {
+    async function fetchProviders() {
+      try {
+        const res = await fetch('/api/providers');
+        const data = await res.json();
+        if (data.providers && data.providers.length > 0) {
+          setProviderList(data.providers);
+          // Auto-select top 3 providers by default
+          const defaultProviders = data.providers.slice(0, 3).map((p: Provider) => p.domain);
+          setSelectedProviders(defaultProviders);
+        }
+      } catch (err) {
+        console.error('Failed to fetch providers:', err);
+      } finally {
+        setLoadingProviders(false);
+      }
+    }
+    fetchProviders();
+  }, []);
+  
+  // Fetch patterns from database
+  useEffect(() => {
+    async function fetchPatterns() {
+      try {
+        const res = await fetch('/api/patterns');
+        const data = await res.json();
+        if (data.patterns && data.patterns.length > 0) {
+          setPatternList(data.patterns);
+          // Set default pattern if current one doesn't exist
+          if (!data.patterns.find((p: any) => p.name === pattern)) {
+            setPattern(data.patterns[0].name as NamePattern);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch patterns:', err);
+      } finally {
+        setLoadingPatterns(false);
+      }
+    }
+    fetchPatterns();
+  }, []);
   
   const filteredCountries = countriesList.filter(c => 
     c.name.toLowerCase().includes(countrySearch.toLowerCase()) ||
@@ -84,7 +130,8 @@ export default function EmailForm({ onGenerate, isLoading, setIsLoading }: Email
           numbers: allowNumbers,
           underscore: allowUnderscore,
           dot: allowDot
-        }
+        },
+        method: 'pattern'
       };
 
       const response = await fetch('/api/generate-emails', {
@@ -137,26 +184,78 @@ export default function EmailForm({ onGenerate, isLoading, setIsLoading }: Email
       </div>
 
       {/* Email Providers */}
-      <div>
-        <label className="block text-sm font-medium text-gray-900 mb-2">
-          Email Providers
-        </label>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-          {providerList.map((provider) => (
-            <label
-              key={provider.id}
-              className="flex items-center space-x-2 p-2 border rounded cursor-pointer hover:bg-gray-50"
-            >
-              <input
-                type="checkbox"
-                checked={selectedProviders.includes(provider.domain)}
-                onChange={() => handleProviderToggle(provider.domain)}
-                className="rounded text-blue-600 focus:ring-blue-500"
-              />
-              <span className="text-sm text-gray-900">{provider.name}</span>
-            </label>
-          ))}
-        </div>
+      <div className="border rounded-lg">
+        <button
+          type="button"
+          onClick={() => setProvidersExpanded(!providersExpanded)}
+          className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
+        >
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-gray-900">
+              Email Providers
+            </span>
+            {loadingProviders && <span className="text-xs text-gray-400">(loading...)</span>}
+            {selectedProviders.length > 0 && (
+              <span className="px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
+                {selectedProviders.length} selected
+              </span>
+            )}
+          </div>
+          <svg 
+            className={`w-5 h-5 text-gray-500 transition-transform ${providersExpanded ? 'rotate-180' : ''}`}
+            fill="none" 
+            stroke="currentColor" 
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+        
+        {providersExpanded && (
+          <div className="px-4 pb-4 border-t">
+            <div className="flex items-center justify-between mb-3 mt-3">
+              <span className="text-xs text-gray-600">
+                Select email domains for generation
+              </span>
+              {providerList.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (selectedProviders.length === providerList.length) {
+                      setSelectedProviders([]);
+                    } else {
+                      setSelectedProviders(providerList.map(p => p.domain));
+                    }
+                  }}
+                  className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                >
+                  {selectedProviders.length === providerList.length ? 'Deselect All' : 'Select All'}
+                </button>
+              )}
+            </div>
+            {providerList.length === 0 && !loadingProviders && (
+              <div className="text-sm text-amber-600 bg-amber-50 border border-amber-200 rounded p-3">
+                ⚠️ No providers found. Please import providers from the admin panel first.
+              </div>
+            )}
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 max-h-60 overflow-y-auto">
+              {providerList.map((provider) => (
+                <label
+                  key={provider.id}
+                  className="flex items-center space-x-2 p-2 border rounded cursor-pointer hover:bg-gray-50"
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedProviders.includes(provider.domain)}
+                    onChange={() => handleProviderToggle(provider.domain)}
+                    className="rounded text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="text-sm text-gray-900">{provider.name}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Demographics Section */}
@@ -264,36 +363,40 @@ export default function EmailForm({ onGenerate, isLoading, setIsLoading }: Email
         {/* Name Pattern */}
         <div className="mb-4">
           <label htmlFor="pattern" className="block text-sm font-medium text-gray-900 mb-2">
-            Name Pattern
+            Name Pattern {loadingPatterns && <span className="text-xs text-gray-400">(loading...)</span>}
           </label>
           <select
             id="pattern"
             value={pattern}
             onChange={(e) => setPattern(e.target.value as NamePattern)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white"
+            disabled={loadingPatterns}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white disabled:bg-gray-100"
           >
-            <optgroup label="Name-Based">
-              <option value="firstname.lastname">firstname.lastname</option>
-              <option value="firstnamelastname">firstnamelastname</option>
-              <option value="firstinitiallastname">firstinitiallastname</option>
-              <option value="firstname_lastname">firstname_lastname</option>
-              <option value="firstnamelastinitial">firstnamelastinitial</option>
-            </optgroup>
-            <optgroup label="Creative">
-              <option value="nickname">nickname (interests)</option>
-              <option value="petname">petname (buddy, max, luna)</option>
-              <option value="hobby">hobby (gamer, artist, coder)</option>
-              <option value="city">city (newyork, london, tokyo)</option>
-            </optgroup>
-            <optgroup label="Combinations">
-              <option value="firstname_pet">firstname + pet</option>
-              <option value="firstname_city">firstname + city</option>
-              <option value="firstname_hobby">firstname + hobby</option>
-              <option value="adjective_noun">adjective + noun (coolstar)</option>
-              <option value="color_thing">color + thing (bluemoon)</option>
-              <option value="thing_year">thing + year (dragon2000)</option>
-            </optgroup>
+            {loadingPatterns ? (
+              <option value="">Loading patterns...</option>
+            ) : patternList.length === 0 ? (
+              <option value="">No patterns available</option>
+            ) : (
+              Object.entries(
+                patternList.reduce((acc, p) => {
+                  if (!acc[p.category]) acc[p.category] = [];
+                  acc[p.category].push(p);
+                  return acc;
+                }, {} as Record<string, typeof patternList>)
+              ).map(([category, patterns]) => (
+                <optgroup key={category} label={category}>
+                  {patterns.map((p) => (
+                    <option key={p.name} value={p.name} title={p.description}>
+                      {p.name} {p.description && `— ${p.description}`}
+                    </option>
+                  ))}
+                </optgroup>
+              ))
+            )}
           </select>
+          {!loadingPatterns && patternList.length === 0 && (
+            <p className="text-xs text-amber-600 mt-1">⚠️ No patterns found. Please add patterns from the admin panel.</p>
+          )}
         </div>
 
         {/* Include Numbers */}

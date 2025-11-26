@@ -35,19 +35,12 @@ export async function POST(request: NextRequest) {
           continue;
         }
 
-        if (mode === 'replace') {
-          await prisma.emailProvider.upsert({
-            where: { providerId },
-            update: { name, domain, popularity, active },
-            create: { providerId, name, domain, popularity, active },
-          });
-        } else {
-          await prisma.emailProvider.create({
-            data: { providerId, name, domain, popularity, active },
-          }).catch(() => {
-            skipped++;
-          });
-        }
+        // Always use upsert to avoid duplicate errors
+        await prisma.emailProvider.upsert({
+          where: { providerId },
+          update: mode === 'replace' ? { name, domain, popularity, active } : {},
+          create: { providerId, name, domain, popularity, active },
+        });
 
         imported++;
       } catch (err) {

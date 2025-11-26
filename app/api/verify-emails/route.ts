@@ -1,4 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { 
+  getCachedVerification, 
+  saveVerificationResult,
+  type VerificationStatus 
+} from '@/lib/emailVerification';
 
 // Your EmailListVerify API key
 const ELV_API_KEY = 'KgKElgkVf8JMq3SYERbhD5VK6sEzjzP8';
@@ -461,6 +466,23 @@ export async function POST(request: NextRequest) {
           };
         }
 
+        // Check cache first
+        const cached = await getCachedVerification(trimmedEmail);
+        if (cached) {
+          // Only skip verification for valid and invalid emails
+          // Risky emails should be re-verified
+          if (cached.status === 'valid' || cached.status === 'invalid') {
+            return {
+              email: trimmedEmail,
+              valid: cached.status === 'valid',
+              reason: `${cached.data?.reason || 'Cached result'} (from cache)`,
+              status: cached.status as 'valid' | 'invalid' | 'risky',
+              details: cached.data
+            };
+          }
+          // For risky emails, continue to re-verify below
+        }
+
         // Then verify with chosen method
         try {
           if (method === 'emaillistverify') {
@@ -482,6 +504,9 @@ export async function POST(request: NextRequest) {
             } else {
               ourStatus = 'invalid';
             }
+            
+            // Save to cache
+            await saveVerificationResult(trimmedEmail, ourStatus as VerificationStatus, result.details);
             
             return {
               email: trimmedEmail,
@@ -508,6 +533,9 @@ export async function POST(request: NextRequest) {
               ourStatus = 'invalid';
             }
             
+            // Save to cache
+            await saveVerificationResult(trimmedEmail, ourStatus as VerificationStatus, result.details);
+            
             return {
               email: trimmedEmail,
               valid: result.exists,
@@ -519,6 +547,10 @@ export async function POST(request: NextRequest) {
           } else if (method === 'reacher') {
             // Use Reacher API (check-if-email-exists)
             const result = await checkEmailReacher(trimmedEmail);
+            const ourStatus: VerificationStatus = result.exists ? 'valid' : 'invalid';
+            
+            // Save to cache
+            await saveVerificationResult(trimmedEmail, ourStatus, result.details);
             
             return {
               email: trimmedEmail,
@@ -544,6 +576,9 @@ export async function POST(request: NextRequest) {
               ourStatus = 'invalid';
             }
             
+            // Save to cache
+            await saveVerificationResult(trimmedEmail, ourStatus as VerificationStatus, result.details);
+            
             return {
               email: trimmedEmail,
               valid: result.exists,
@@ -555,6 +590,10 @@ export async function POST(request: NextRequest) {
           } else {
             // Fallback to EmailListVerify for any unknown method
             const result = await checkEmailListVerify(trimmedEmail);
+            const ourStatus: VerificationStatus = result.exists ? 'valid' : 'invalid';
+            
+            // Save to cache
+            await saveVerificationResult(trimmedEmail, ourStatus, result.details);
             
             return {
               email: trimmedEmail,
@@ -607,12 +646,14 @@ export async function POST(request: NextRequest) {
       invalid: results.filter(r => r.status === 'invalid').length,
       risky: results.filter(r => r.status === 'risky').length,
       error: results.filter(r => r.status === 'error').length,
+      cached: results.filter(r => r.reason?.includes('from cache')).length,
     };
 
     return NextResponse.json({
       success: true,
       results,
-      stats
+      stats,
+      message: stats.cached > 0 ? `${stats.cached} results retrieved from cache` : undefined
     });
 
   } catch (error) {

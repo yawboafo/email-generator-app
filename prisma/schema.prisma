@@ -95,6 +95,21 @@ model PatternElement {
   @@index([type])
 }
 
+// Pattern definitions table - stores email pattern templates
+model Pattern {
+  id          String   @id @default(cuid())
+  name        String   @unique // "firstname.lastname", "color_thing", etc.
+  template    String   // "{firstName}.{lastName}", "{colors}{things}", etc.
+  description String   // Human-readable description for UI
+  category    String   // "name-based", "creative", "combination"
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([active])
+  @@index([category])
+}
+
 // Optional: Email generation history for analytics
 model EmailGeneration {
   id            String   @id @default(cuid())
@@ -120,4 +135,20 @@ model SavedEmail {
   updatedAt    DateTime @updatedAt
 
   @@index([createdAt])
+}
+
+// Verified emails cache - stores verification results for reuse
+model VerifiedEmail {
+  id                String   @id @default(cuid())
+  emailAddress      String   @unique
+  status            String   // "valid", "risky", "invalid", "unknown"
+  verificationData  Json?    // Store full API response for reference
+  lastVerifiedAt    DateTime @default(now())
+  verificationCount Int      @default(1) // Track how many times we've verified this
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([status])
+  @@index([lastVerifiedAt])
+  @@index([emailAddress])
 }

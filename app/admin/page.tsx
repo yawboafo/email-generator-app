@@ -11,6 +11,7 @@ interface Stats {
   cities: number;
   emailProviders: number;
   patternElements: number;
+  patterns: number;
   savedEmails: number;
   emailGenerations: number;
 }
@@ -22,7 +23,7 @@ interface ImportResult {
   errors: string[];
 }
 
-type ImportType = 'countries' | 'firstnames' | 'lastnames' | 'cities' | 'providers' | 'patterns' | 'bulknames';
+type ImportType = 'countries' | 'firstnames' | 'lastnames' | 'cities' | 'providers' | 'patterns' | 'pattern-templates' | 'bulknames';
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<ImportType>('bulknames');
@@ -275,7 +276,8 @@ export default function AdminDashboard() {
     { id: 'lastnames', label: 'Last Names', description: 'Import surnames by country' },
     { id: 'cities', label: 'Cities', description: 'Import cities with optional population data' },
     { id: 'providers', label: 'Email Providers', description: 'Import email provider configurations' },
-    { id: 'patterns', label: 'Patterns', description: 'Import pattern elements (pet names, hobbies, etc.)' },
+    { id: 'patterns', label: 'Pattern Elements', description: 'Import pattern elements (pet names, hobbies, etc.)' },
+    { id: 'pattern-templates', label: 'Pattern Templates', description: 'Import pattern templates (email format patterns)' },
   ];
 
   const getFormatExample = (type: ImportType) => {
@@ -303,6 +305,10 @@ export default function AdminDashboard() {
       patterns: `[
   { "type": "petNames", "value": "luna" },
   { "type": "hobbies", "value": "gamer" }
+]`,
+      'pattern-templates': `[
+  { "name": "firstname.lastname", "template": "{firstName}.{lastName}", "description": "First name dot last name", "category": "name-based", "active": true },
+  { "name": "color_thing", "template": "{color}{thing}", "description": "Color followed by thing", "category": "creative", "active": true }
 ]`,
       bulknames: `CSV Format (philipperemy/name-dataset):
 Headers can be in any language, we use column position:
@@ -349,7 +355,7 @@ Ahmad,Khan,M,AF`,
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Stats Cards */}
         {stats && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
             <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
               <div className="text-sm font-medium text-gray-600">Countries</div>
               <div className="text-3xl font-bold text-indigo-600 mt-2">{stats.countries.toLocaleString()}</div>
@@ -365,6 +371,26 @@ Ahmad,Khan,M,AF`,
             <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
               <div className="text-sm font-medium text-gray-600">Cities</div>
               <div className="text-3xl font-bold text-green-600 mt-2">{stats.cities.toLocaleString()}</div>
+            </div>
+            <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
+              <div className="text-sm font-medium text-gray-600">Email Providers</div>
+              <div className="text-3xl font-bold text-orange-600 mt-2">{stats.emailProviders.toLocaleString()}</div>
+            </div>
+            <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
+              <div className="text-sm font-medium text-gray-600">Pattern Elements</div>
+              <div className="text-3xl font-bold text-pink-600 mt-2">{stats.patternElements.toLocaleString()}</div>
+            </div>
+            <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
+              <div className="text-sm font-medium text-gray-600">Patterns</div>
+              <div className="text-3xl font-bold text-cyan-600 mt-2">{stats.patterns.toLocaleString()}</div>
+            </div>
+            <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
+              <div className="text-sm font-medium text-gray-600">Saved Emails</div>
+              <div className="text-3xl font-bold text-teal-600 mt-2">{stats.savedEmails.toLocaleString()}</div>
+            </div>
+            <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
+              <div className="text-sm font-medium text-gray-600">Generations</div>
+              <div className="text-3xl font-bold text-red-600 mt-2">{stats.emailGenerations.toLocaleString()}</div>
             </div>
           </div>
         )}
