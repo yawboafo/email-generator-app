@@ -17,7 +17,8 @@ export type NamePattern =
   | 'firstname_city'
   | 'firstname_hobby'
   | 'color_thing'
-  | 'thing_year';
+  | 'thing_year'
+  | 'random';
 
 export type AgeRange = '18-25' | '26-35' | '36-45' | '46-60' | '60+';
 

@@ -107,8 +107,8 @@ export async function POST(request: NextRequest) {
       select: { code: true, id: true },
     });
 
-    const existingCountryCodes = new Set(existingCountries.map(c => c.code));
-    const countryIdMap = new Map(existingCountries.map(c => [c.code, c.id]));
+    const existingCountryCodes = new Set(existingCountries.map((c: { code: string; id: string }) => c.code));
+    const countryIdMap = new Map(existingCountries.map((c: { code: string; id: string }) => [c.code, c.id]));
 
     // Filter out records with non-existent countries
     const recordsToImport = validRecords.filter(r => {
@@ -130,12 +130,13 @@ export async function POST(request: NextRequest) {
           if (record.firstName) {
             await prisma.firstName.upsert({
               where: {
-                name_countryId: {
+                name_countryId_gender: {
                   name: record.firstName,
                   countryId: countryId,
+                  gender: record.gender,
                 },
               },
-              update: { gender: record.gender },
+              update: {},
               create: {
                 name: record.firstName,
                 gender: record.gender,

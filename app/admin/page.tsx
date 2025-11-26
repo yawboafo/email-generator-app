@@ -29,6 +29,9 @@ export default function AdminDashboard() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(false);
   const [importMode, setImportMode] = useState<'add' | 'replace'>('add');
+  const [useFastImport, setUseFastImport] = useState(true); // Default to fast import
+  const [useStreaming, setUseStreaming] = useState(false); // Streaming for very large files
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [parsedData, setParsedData] = useState<any[]>([]);
   const [importResult, setImportResult] = useState<ImportResult | null>(null);
   const [bulkProgress, setBulkProgress] = useState<ImportProgress>({
@@ -57,7 +60,80 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleStreamingImport = async () => {
+    if (!uploadedFile) {
+      alert('Please upload a file first');
+      return;
+    }
+
+    setBulkProgress({
+      stage: 'uploading',
+      progress: 0,
+      total: 0,
+      currentBatch: 0,
+      totalBatches: 1,
+      imported: 0,
+      skipped: 0,
+      errors: [],
+      message: 'Streaming file to server...',
+    });
+
+    setLoading(true);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', uploadedFile);
+      formData.append('mode', importMode);
+
+      setBulkProgress(prev => ({
+        ...prev,
+        stage: 'importing',
+        message: 'Processing CSV stream...',
+      }));
+
+      const res = await fetch('/api/admin/import/bulk-names-stream', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const result = await res.json();
+      
+      if (!res.ok) {
+        throw new Error(result.error || 'Streaming import failed');
+      }
+
+      setBulkProgress({
+        stage: 'complete',
+        progress: result.processed || 0,
+        total: result.processed || 0,
+        currentBatch: 1,
+        totalBatches: 1,
+        imported: result.imported || 0,
+        skipped: result.skipped || 0,
+        errors: result.errors || [],
+        message: `Streaming import completed! (${result.recordsPerSecond} records/sec)`,
+      });
+
+      fetchStats();
+    } catch (error: any) {
+      console.error('Streaming import error:', error);
+      setBulkProgress(prev => ({
+        ...prev,
+        stage: 'idle',
+        errors: [error.message],
+        message: 'Streaming import failed',
+      }));
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleBulkImport = async () => {
+    // If streaming is enabled and we have a file, use streaming import
+    if (useStreaming && uploadedFile) {
+      return handleStreamingImport();
+    }
+
     if (parsedData.length === 0) {
       alert('Please upload a file first');
       return;
@@ -97,7 +173,11 @@ export default function AdminDashboard() {
           message: `Importing batch ${i + 1} of ${totalBatches}...`,
         }));
 
-        const res = await fetch('/api/admin/import/bulk-names', {
+        const endpoint = useFastImport 
+          ? '/api/admin/import/bulk-names-fast'
+          : '/api/admin/import/bulk-names';
+        
+        const res = await fetch(endpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -366,9 +446,50 @@ Ahmad,Khan,M,AF`,
               </div>
             </div>
 
+            {/* Fast Import Option */}
+            <div className="mb-4">
+              <label className="flex items-center space-x-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={useFastImport}
+                  onChange={(e) => setUseFastImport(e.target.checked)}
+                  disabled={useStreaming}
+                  className="text-indigo-600 focus:ring-indigo-500 h-4 w-4 disabled:opacity-50"
+                />
+                <span className="text-sm text-gray-700">
+                  Use Fast Import (10-100x faster, recommended for large files)
+                </span>
+              </label>
+              <p className="text-xs text-gray-500 ml-6 mt-1">
+                Uses PostgreSQL COPY command with parallel processing for maximum performance
+              </p>
+            </div>
+
+            {/* Streaming Option */}
+            <div className="mb-4">
+              <label className="flex items-center space-x-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={useStreaming}
+                  onChange={(e) => {
+                    setUseStreaming(e.target.checked);
+                    if (e.target.checked) setUseFastImport(false);
+                  }}
+                  className="text-indigo-600 focus:ring-indigo-500 h-4 w-4"
+                />
+                <span className="text-sm text-gray-700">
+                  Use Streaming Import (for files &gt;100MB, unlimited size)
+                </span>
+              </label>
+              <p className="text-xs text-gray-500 ml-6 mt-1">
+                Processes CSV in chunks without loading entire file to memory. Ideal for very large files.
+              </p>
+            </div>
+
             {/* File Upload */}
             <FileUpload
               onDataParsed={setParsedData}
+              onFileSelected={setUploadedFile}
               acceptedFormats={['.json', '.csv']}
               label="Upload Data File"
             />

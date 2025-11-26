@@ -5,11 +5,12 @@ import Papa from 'papaparse';
 
 interface FileUploadProps {
   onDataParsed: (data: any[]) => void;
+  onFileSelected?: (file: File | null) => void;
   acceptedFormats?: string[];
   label: string;
 }
 
-export default function FileUpload({ onDataParsed, acceptedFormats = ['.json', '.csv'], label }: FileUploadProps) {
+export default function FileUpload({ onDataParsed, onFileSelected, acceptedFormats = ['.json', '.csv'], label }: FileUploadProps) {
   const [file, setFile] = useState<File | null>(null);
   const [parsing, setParsing] = useState(false);
   const [preview, setPreview] = useState<any[]>([]);
@@ -22,6 +23,12 @@ export default function FileUpload({ onDataParsed, acceptedFormats = ['.json', '
     setFile(selectedFile);
     setError('');
     setPreview([]);
+    
+    // Notify parent of file selection
+    if (onFileSelected) {
+      onFileSelected(selectedFile);
+    }
+    
     parseFile(selectedFile);
   };
 
