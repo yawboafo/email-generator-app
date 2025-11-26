@@ -1071,7 +1071,7 @@ email3@example.com"
                 Generate, send, and verify email addresses efficiently. Use responsibly and in compliance with applicable laws.
               </p>
               <p className="text-xs text-slate-400 pt-2">
-                Built with Next.js, TypeScript, and Tailwind CSS
+                Developed by HackerOneBigFire
               </p>
             </div>
           </div>
