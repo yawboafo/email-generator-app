@@ -9,10 +9,11 @@ import * as brevo from '@getbrevo/brevo';
 import * as postmark from 'postmark';
 import Mailjet from 'node-mailjet';
 import SparkPost from 'sparkpost';
+import axios from 'axios';
 
 // Types
 interface SendEmailRequest {
-  provider: 'resend' | 'sendgrid' | 'mailgun' | 'ses' | 'brevo' | 'postmark' | 'mailjet' | 'sparkpost';
+  provider: 'resend' | 'sendgrid' | 'mailgun' | 'ses' | 'brevo' | 'postmark' | 'mailjet' | 'sparkpost' | 'zoho';
   apiKey: string;
   from: string;
   to: string[];
@@ -25,6 +26,7 @@ interface SendEmailRequest {
   awsAccessKeyId?: string; // Required for SES
   awsSecretAccessKey?: string; // Required for SES
   mailjetApiSecret?: string; // Required for Mailjet
+  zohoAccountKey?: string; // Required for Zoho (Account Key for authentication)
 }
 
 interface EmailResult {
@@ -380,6 +382,54 @@ async function sendWithSparkPost(
   return results;
 }
 
+// Zoho Mail Implementation
+async function sendWithZoho(
+  apiKey: string,
+  accountKey: string,
+  from: string,
+  to: string[],
+  subject: string,
+  html: string
+): Promise<EmailResult[]> {
+  const results: EmailResult[] = [];
+
+  for (const email of to) {
+    try {
+      // Zoho Mail API endpoint
+      const response = await axios.post(
+        'https://mail.zoho.com/api/accounts/' + accountKey + '/messages',
+        {
+          fromAddress: from,
+          toAddress: email,
+          subject: subject,
+          content: html,
+          mailFormat: 'html',
+        },
+        {
+          headers: {
+            'Authorization': 'Zoho-oauthtoken ' + apiKey,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      results.push({
+        email,
+        success: true,
+        messageId: response.data?.data?.messageId || 'sent',
+      });
+    } catch (error: any) {
+      results.push({
+        email,
+        success: false,
+        error: error.response?.data?.message || error.message || 'Unknown error',
+      });
+    }
+  }
+
+  return results;
+}
+
 // Main POST Handler
 export async function POST(request: NextRequest) {
   try {
@@ -454,6 +504,16 @@ export async function POST(request: NextRequest) {
 
       case 'sparkpost':
         results = await sendWithSparkPost(apiKey, from, to, subject, html);
+        break;
+
+      case 'zoho':
+        if (!body.zohoAccountKey) {
+          return NextResponse.json(
+            { error: 'Zoho Account Key is required' },
+            { status: 400 }
+          );
+        }
+        results = await sendWithZoho(apiKey, body.zohoAccountKey, from, to, subject, html);
         break;
 
       default:

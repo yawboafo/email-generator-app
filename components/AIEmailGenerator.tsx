@@ -22,6 +22,7 @@ export default function AIEmailGenerator({ onGenerate, isLoading, setIsLoading }
   const [countriesCount, setCountriesCount] = useState<number>(0);
   const [showCountries, setShowCountries] = useState<boolean>(false);
   const [generationMethod, setGenerationMethod] = useState<GenerationMethod>('pattern');
+  const [providersExpanded, setProvidersExpanded] = useState(false);
   const countries = allCountries as Array<{ code: string; name: string }>;
 
   // Fetch providers from database
@@ -321,36 +322,79 @@ export default function AIEmailGenerator({ onGenerate, isLoading, setIsLoading }
       </div>
 
       {/* Email Providers */}
-      <div>
-        <label className="block text-sm font-medium text-gray-900 mb-2">
-          Email Providers
-        </label>
-        {loadingProviders ? (
-          <div className="text-center py-4">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
-            <p className="text-sm text-gray-600 mt-2">Loading providers...</p>
+      <div className="border rounded-lg">
+        <button
+          type="button"
+          onClick={() => setProvidersExpanded(!providersExpanded)}
+          className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
+        >
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-gray-900">
+              Email Providers
+            </span>
+            {loadingProviders && <span className="text-xs text-gray-400">(loading...)</span>}
+            {selectedProviders.length > 0 && (
+              <span className="px-2 py-0.5 text-xs font-medium bg-purple-100 text-purple-800 rounded-full">
+                {selectedProviders.length} selected
+              </span>
+            )}
           </div>
-        ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-            {providerList.map((provider) => (
-              <label
-                key={provider.id}
-                className={`flex items-center space-x-2 p-2 border-2 rounded cursor-pointer transition-all ${
-                  selectedProviders.includes(provider.domain)
-                    ? 'border-purple-500 bg-purple-50'
-                    : 'border-gray-300 hover:bg-gray-50'
-                }`}
-              >
-                <input
-                  type="checkbox"
-                  checked={selectedProviders.includes(provider.domain)}
-                  onChange={() => handleProviderToggle(provider.domain)}
-                  className="rounded text-purple-600 focus:ring-purple-500"
-                  disabled={isLoading}
-                />
-                <span className="text-sm text-gray-900">{provider.name}</span>
-              </label>
-            ))}
+          <svg 
+            className={`w-5 h-5 text-gray-500 transition-transform ${providersExpanded ? 'rotate-180' : ''}`}
+            fill="none" 
+            stroke="currentColor" 
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+        
+        {providersExpanded && (
+          <div className="px-4 pb-4 border-t">
+            <div className="flex items-center justify-between mb-3 mt-3">
+              <span className="text-xs text-gray-600">
+                Select email domains for generation
+              </span>
+              {providerList.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (selectedProviders.length === providerList.length) {
+                      setSelectedProviders([]);
+                    } else {
+                      setSelectedProviders(providerList.map(p => p.domain));
+                    }
+                  }}
+                  className="text-xs text-purple-600 hover:text-purple-800 font-medium"
+                >
+                  {selectedProviders.length === providerList.length ? 'Deselect All' : 'Select All'}
+                </button>
+              )}
+            </div>
+            {loadingProviders ? (
+              <div className="text-center py-4">
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+                <p className="text-sm text-gray-600 mt-2">Loading providers...</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 max-h-60 overflow-y-auto">
+                {providerList.map((provider) => (
+                  <label
+                    key={provider.domain}
+                    className="flex items-center space-x-2 p-2 border rounded cursor-pointer hover:bg-gray-50"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedProviders.includes(provider.domain)}
+                      onChange={() => handleProviderToggle(provider.domain)}
+                      className="rounded text-purple-600 focus:ring-purple-500"
+                      disabled={isLoading}
+                    />
+                    <span className="text-sm text-gray-900">{provider.name}</span>
+                  </label>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>

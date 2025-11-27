@@ -11,6 +11,7 @@ export interface EmailProviderKeys {
   postmark?: string;
   mailjet?: { apiKey: string; apiSecret: string };
   sparkpost?: string;
+  zoho?: { apiKey: string; accountKey: string };
 }
 
 interface EmailProviderConfigProps {
@@ -347,6 +348,55 @@ export default function EmailProviderConfig({ isOpen, onClose, onSave }: EmailPr
               >
                 {showKeys.sparkpost ? '👁️' : '👁️‍🗨️'}
               </button>
+            </div>
+          </div>
+
+          {/* Zoho Mail */}
+          <div className="bg-slate-50 rounded-xl p-5 border border-slate-200">
+            <div className="flex items-center justify-between mb-3">
+              <div>
+                <h4 className="font-semibold text-slate-900">Zoho Mail</h4>
+                <p className="text-xs text-slate-500">Free plan: 5 GB/user, 25 MB attachments</p>
+              </div>
+              <a href="https://api-console.zoho.com/" target="_blank" rel="noopener noreferrer" className="text-xs text-indigo-600 hover:text-indigo-700">
+                Get API Credentials →
+              </a>
+            </div>
+            <div className="space-y-3">
+              <div className="relative">
+                <label className="block text-xs text-slate-600 mb-1">OAuth Token / API Key</label>
+                <input
+                  type={showKeys.zohoApiKey ? "text" : "password"}
+                  placeholder="OAuth Token"
+                  value={keys.zoho?.apiKey || ''}
+                  onChange={(e) => setKeys({ ...keys, zoho: { ...keys.zoho, apiKey: e.target.value, accountKey: keys.zoho?.accountKey || '' } })}
+                  className="w-full px-4 py-2.5 pr-12 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600 text-sm"
+                />
+                <button
+                  type="button"
+                  onClick={() => toggleShowKey('zohoApiKey')}
+                  className="absolute right-3 top-[34px] text-slate-400 hover:text-slate-600"
+                >
+                  {showKeys.zohoApiKey ? '👁️' : '👁️‍🗨️'}
+                </button>
+              </div>
+              <div className="relative">
+                <label className="block text-xs text-slate-600 mb-1">Account Key</label>
+                <input
+                  type={showKeys.zohoAccountKey ? "text" : "password"}
+                  placeholder="Account Key"
+                  value={keys.zoho?.accountKey || ''}
+                  onChange={(e) => setKeys({ ...keys, zoho: { ...keys.zoho, apiKey: keys.zoho?.apiKey || '', accountKey: e.target.value } })}
+                  className="w-full px-4 py-2.5 pr-12 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-600 text-sm"
+                />
+                <button
+                  type="button"
+                  onClick={() => toggleShowKey('zohoAccountKey')}
+                  className="absolute right-3 top-[34px] text-slate-400 hover:text-slate-600"
+                >
+                  {showKeys.zohoAccountKey ? '👁️' : '👁️‍🗨️'}
+                </button>
+              </div>
             </div>
           </div>
         </div>

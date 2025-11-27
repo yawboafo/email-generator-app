@@ -32,7 +32,7 @@ export default function Home() {
   const [selectedCachedEmails, setSelectedCachedEmails] = useState<Set<string>>(new Set());
   const [isLoadingCached, setIsLoadingCached] = useState(false);
   const [showProviderConfig, setShowProviderConfig] = useState(false);
-  const [sendProvider, setSendProvider] = useState<'resend' | 'sendgrid' | 'mailgun' | 'brevo' | 'ses' | 'postmark' | 'mailjet' | 'sparkpost'>('resend');
+  const [sendProvider, setSendProvider] = useState<'resend' | 'sendgrid' | 'mailgun' | 'brevo' | 'ses' | 'postmark' | 'mailjet' | 'sparkpost' | 'zoho'>('resend');
   const [providerKeys, setProviderKeys] = useState<EmailProviderKeys>({});
   const [isSending, setIsSending] = useState(false);
   const [sendResults, setSendResults] = useState<any[]>([]);
@@ -69,6 +69,7 @@ export default function Home() {
       case 'postmark': return !!providerKeys.postmark;
       case 'mailjet': return !!(providerKeys.mailjet?.apiKey && providerKeys.mailjet?.apiSecret);
       case 'sparkpost': return !!providerKeys.sparkpost;
+      case 'zoho': return !!(providerKeys.zoho?.apiKey && providerKeys.zoho?.accountKey);
       default: return false;
     }
   };
@@ -196,6 +197,10 @@ export default function Home() {
         case 'sparkpost':
           requestBody.apiKey = providerKeys.sparkpost;
           break;
+        case 'zoho':
+          requestBody.apiKey = providerKeys.zoho?.apiKey;
+          requestBody.zohoAccountKey = providerKeys.zoho?.accountKey;
+          break;
       }
 
       const response = await fetch('/api/send-emails', {
@@ -280,11 +285,21 @@ export default function Home() {
     }
   };
 
+  const handleToggleCachedEmail = (email: string) => {
+    const newSelected = new Set(selectedCachedEmails);
+    if (newSelected.has(email)) {
+      newSelected.delete(email);
+    } else {
+      newSelected.add(email);
+    }
+    setSelectedCachedEmails(newSelected);
+  };
+
   const handleSelectAllCached = () => {
     if (selectedCachedEmails.size === cachedEmails.length) {
       setSelectedCachedEmails(new Set());
     } else {
-      setSelectedCachedEmails(new Set(cachedEmails.map(e => e.email)));
+      setSelectedCachedEmails(new Set(cachedEmails.map(e => e.email || e.emailAddress)));
     }
   };
 
@@ -516,6 +531,7 @@ export default function Home() {
                       { id: 'postmark', name: 'Postmark', free: 'Paid', icon: 'PM' },
                       { id: 'mailjet', name: 'Mailjet', free: '6K/mo', icon: 'MJ' },
                       { id: 'sparkpost', name: 'SparkPost', free: '500/mo', icon: 'SP' },
+                      { id: 'zoho', name: 'Zoho Mail', free: 'Free', icon: 'Z' },
                     ].map((provider) => (
                       <button
                         key={provider.id}
@@ -1135,8 +1151,8 @@ email3@example.com"
                   )}
                 </div>
 
-                {/* Cached Emails Database Table */}
-                {showCachedEmailsTable && (
+                {/* Cached Emails Database Table - Moved to Saved tab */}
+                {false && showCachedEmailsTable && (
                   <div className="mt-8 pt-8 border-t border-slate-200">
                     <div className="flex justify-between items-center mb-6">
                       <div>
@@ -1282,19 +1298,164 @@ email3@example.com"
         )}
 
         {activeTab === 'saved' && (
-          <div className="max-w-6xl mx-auto">
-            <SavedEmailsList 
-              onImport={(batch) => {
-                // Show import options
-                const choice = confirm(`Import "${batch.name}" (${batch.count.toLocaleString()} emails) to:\n\nOK = Send Emails tab\nCancel = Verify Emails tab`);
-                if (choice) {
-                  handleImportToSend(batch);
-                } else {
-                  handleImportToVerify(batch);
-                }
-              }}
-              onRefresh={refreshSavedCount}
-            />
+          <div className="max-w-6xl mx-auto space-y-8">
+            {/* Saved Email Batches */}
+            <div>
+              <h2 className="text-2xl font-semibold text-slate-900 tracking-tight mb-6">Saved Email Batches</h2>
+              <SavedEmailsList 
+                onImport={(batch) => {
+                  // Show import options
+                  const choice = confirm(`Import "${batch.name}" (${batch.count.toLocaleString()} emails) to:\n\nOK = Send Emails tab\nCancel = Verify Emails tab`);
+                  if (choice) {
+                    handleImportToSend(batch);
+                  } else {
+                    handleImportToVerify(batch);
+                  }
+                }}
+                onRefresh={refreshSavedCount}
+              />
+            </div>
+
+            {/* Verified Emails Database */}
+            <div className="pt-8 border-t border-slate-200">
+              <div className="flex justify-between items-center mb-6">
+                <div>
+                  <h2 className="text-2xl font-semibold text-slate-900 tracking-tight">Verified Emails Database</h2>
+                  <p className="text-slate-500 text-sm mt-1">All previously verified emails cached in the database</p>
+                </div>
+                <div className="flex gap-2 items-center">
+                  <select
+                    value={cachedEmailsFilter}
+                    onChange={(e) => {
+                      setCachedEmailsFilter(e.target.value as any);
+                      setCachedEmails([]);
+                      setSelectedCachedEmails(new Set());
+                    }}
+                    className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="all">All Status</option>
+                    <option value="valid">Valid Only</option>
+                    <option value="risky">Risky Only</option>
+                    <option value="invalid">Invalid Only</option>
+                  </select>
+                  <button
+                    onClick={() => {
+                      if (cachedEmails.length === 0) {
+                        loadCachedEmails();
+                      }
+                    }}
+                    disabled={isLoadingCached}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-400 text-white rounded-lg text-sm font-medium transition-all"
+                  >
+                    {isLoadingCached ? 'Loading...' : cachedEmails.length > 0 ? 'Refresh' : 'Load Database'}
+                  </button>
+                </div>
+              </div>
+
+              {cachedEmails.length > 0 && (
+                <div className="space-y-4">
+                  <div className="flex flex-wrap gap-3">
+                    <button
+                      onClick={handleSelectAllCached}
+                      className="px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-lg text-sm font-medium"
+                    >
+                      {selectedCachedEmails.size === cachedEmails.length ? 'Deselect All' : 'Select All'}
+                    </button>
+                    <button
+                      onClick={handleCopyCachedSelected}
+                      disabled={selectedCachedEmails.size === 0}
+                      className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-slate-400 text-white rounded-lg text-sm font-medium"
+                    >
+                      Copy Selected ({selectedCachedEmails.size})
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (selectedCachedEmails.size === 0) {
+                          alert('Please select emails first');
+                          return;
+                        }
+                        setVerifyEmails(Array.from(selectedCachedEmails).join('\n'));
+                        setActiveTab('verify');
+                        alert(`Loaded ${selectedCachedEmails.size} emails to Verify tab`);
+                      }}
+                      disabled={selectedCachedEmails.size === 0}
+                      className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-400 text-white rounded-lg text-sm font-medium"
+                    >
+                      Load to Verify
+                    </button>
+                  </div>
+
+                  <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead className="bg-slate-50 border-b border-slate-200">
+                          <tr>
+                            <th className="px-4 py-3 text-left">
+                              <input
+                                type="checkbox"
+                                checked={selectedCachedEmails.size === cachedEmails.length && cachedEmails.length > 0}
+                                onChange={handleSelectAllCached}
+                                className="rounded border-slate-300"
+                              />
+                            </th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Email</th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Status</th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Last Verified</th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Count</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-200">
+                          {cachedEmails.map((email: any) => (
+                            <tr key={email.emailAddress} className="hover:bg-slate-50">
+                              <td className="px-4 py-3">
+                                <input
+                                  type="checkbox"
+                                  checked={selectedCachedEmails.has(email.emailAddress)}
+                                  onChange={() => handleToggleCachedEmail(email.emailAddress)}
+                                  className="rounded border-slate-300"
+                                />
+                              </td>
+                              <td className="px-4 py-3 text-sm font-mono text-slate-900">{email.emailAddress}</td>
+                              <td className="px-4 py-3">
+                                <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                  email.status === 'valid' ? 'bg-green-100 text-green-800' :
+                                  email.status === 'risky' ? 'bg-amber-100 text-amber-800' :
+                                  email.status === 'invalid' ? 'bg-red-100 text-red-800' :
+                                  'bg-slate-100 text-slate-800'
+                                }`}>
+                                  {email.status}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 text-sm text-slate-600">
+                                {new Date(email.lastVerifiedAt).toLocaleString()}
+                              </td>
+                              <td className="px-4 py-3 text-sm text-slate-600">{email.verificationCount}x</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {cachedEmails.length === 0 && !isLoadingCached && (
+                <div className="bg-slate-50/50 rounded-xl p-8 text-center text-slate-500 border border-slate-200/40">
+                  <svg className="w-16 h-16 mx-auto mb-4 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4" />
+                  </svg>
+                  <p className="text-lg font-medium">No verified emails in database yet</p>
+                  <p className="text-sm mt-2">Click "Load Database" to view all verified emails</p>
+                </div>
+              )}
+
+              {isLoadingCached && (
+                <div className="text-center py-12">
+                  <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                  <p className="text-sm text-slate-600 mt-4">Loading verified emails from database...</p>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
