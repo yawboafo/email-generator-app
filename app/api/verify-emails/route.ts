@@ -716,7 +716,7 @@ export async function POST(request: NextRequest) {
       { 
         error: errorMessage, 
         details: details,
-        provider: method || 'unknown'
+        provider: 'mailsso'
       },
       { status: 500 }
     );
