@@ -168,9 +168,11 @@ async function processBatch(
               },
               update: {},
               create: {
+                id: `${countryId}-${record.firstName}-${record.gender}`,
                 name: record.firstName,
                 gender: record.gender,
                 countryId: countryId,
+                updatedAt: new Date(),
               },
             });
           }
@@ -185,8 +187,10 @@ async function processBatch(
               },
               update: {},
               create: {
+                id: `${countryId}-${record.lastName}`,
                 name: record.lastName,
                 countryId: countryId,
+                updatedAt: new Date(),
               },
             });
           }
@@ -196,97 +200,53 @@ async function processBatch(
         }
       }
     } else {
-      // Add mode: Use COPY with ON CONFLICT DO NOTHING via raw SQL
-      // This is the fastest approach for bulk inserts
-      
-      // Use temporary table approach for ON CONFLICT support with COPY
-      const client = await pool.connect();
-      
+      // Add mode: Use Prisma createMany for proper ID generation
       try {
-        await client.query('BEGIN');
-
-        // Insert first names
+        // Insert first names in batches
         if (firstNameRecords.length > 0) {
-          // Create temp table
-          await client.query(`
-            CREATE TEMP TABLE temp_first_names (
-              name TEXT,
-              gender TEXT,
-              "countryId" INTEGER
-            ) ON COMMIT DROP
-          `);
-
-          // COPY into temp table
-          const copyCommand = `COPY temp_first_names (name, gender, "countryId") FROM STDIN WITH (FORMAT csv)`;
-          const csvData = firstNameRecords
-            .map(record => record.map(v => String(v)).join(','))
-            .join('\n') + '\n';
+          const firstNamesData = firstNameRecords.map(r => ({
+            id: `${r[2]}-${r[0]}-${r[1]}`,
+            name: r[0],
+            gender: r[1],
+            countryId: r[2],
+            updatedAt: new Date(),
+          }));
           
-          const stream = Readable.from([csvData]);
-          const copyStream = client.query(copyFrom.from(copyCommand));
-          
-          await new Promise((resolve, reject) => {
-            stream.pipe(copyStream)
-              .on('finish', resolve)
-              .on('error', reject);
-          });
-
-          // Insert from temp table with ON CONFLICT DO NOTHING
-          const result = await client.query(`
-            INSERT INTO "FirstName" (name, gender, "countryId")
-            SELECT name, gender::"Gender", "countryId"
-            FROM temp_first_names
-            ON CONFLICT (name, "countryId") DO NOTHING
-          `);
-          
-          imported += result.rowCount || 0;
+          // Insert in smaller sub-batches to avoid timeouts
+          for (let i = 0; i < firstNamesData.length; i += 1000) {
+            const batch = firstNamesData.slice(i, i + 1000);
+            const result = await prisma.firstName.createMany({
+              data: batch,
+              skipDuplicates: true,
+            });
+            imported += result.count;
+          }
         }
 
-        // Insert last names
+        // Insert last names in batches
         if (lastNameRecords.length > 0) {
-          // Create temp table
-          await client.query(`
-            CREATE TEMP TABLE temp_last_names (
-              name TEXT,
-              "countryId" INTEGER
-            ) ON COMMIT DROP
-          `);
-
-          // COPY into temp table
-          const copyCommand = `COPY temp_last_names (name, "countryId") FROM STDIN WITH (FORMAT csv)`;
-          const csvData = lastNameRecords
-            .map(record => record.map(v => String(v)).join(','))
-            .join('\n') + '\n';
+          const lastNamesData = lastNameRecords.map(r => ({
+            id: `${r[1]}-${r[0]}`,
+            name: r[0],
+            countryId: r[1],
+            updatedAt: new Date(),
+          }));
           
-          const stream = Readable.from([csvData]);
-          const copyStream = client.query(copyFrom.from(copyCommand));
-          
-          await new Promise((resolve, reject) => {
-            stream.pipe(copyStream)
-              .on('finish', resolve)
-              .on('error', reject);
-          });
-
-          // Insert from temp table with ON CONFLICT DO NOTHING
-          const result = await client.query(`
-            INSERT INTO "LastName" (name, "countryId")
-            SELECT name, "countryId"
-            FROM temp_last_names
-            ON CONFLICT (name, "countryId") DO NOTHING
-          `);
-          
-          imported += result.rowCount || 0;
+          // Insert in smaller sub-batches
+          for (let i = 0; i < lastNamesData.length; i += 1000) {
+            const batch = lastNamesData.slice(i, i + 1000);
+            const result = await prisma.lastName.createMany({
+              data: batch,
+              skipDuplicates: true,
+            });
+            imported += result.count;
+          }
         }
 
-        await client.query('COMMIT');
-        
         skipped = records.length - imported;
       } catch (error: any) {
-        await client.query('ROLLBACK');
         errors.push(`Batch insert failed: ${error.message}`);
         throw error;
-      } finally {
-        client.release();
       }
     }
 
@@ -360,10 +320,33 @@ export async function POST(request: NextRequest) {
           }
         }
 
-        if (!firstName || !countryCode) {
-          if (firstName || lastName || gender || countryCode) {
-            allErrors.push(`Missing required fields: first_name="${firstName}", country_code="${countryCode}"`);
-          }
+        // Field swapping and defaulting logic
+        // If first_name is empty, swap with last_name
+        if (!firstName && lastName) {
+          firstName = lastName;
+          lastName = '';
+        }
+        
+        // If last_name is empty but first_name exists, use first_name for both
+        if (firstName && !lastName) {
+          lastName = firstName;
+        }
+        
+        // Default empty gender to 'F'
+        if (!gender) {
+          gender = 'F';
+        }
+        
+        // Skip only if country_code is missing (we need this for lookups)
+        if (!countryCode) {
+          allErrors.push(`Skipping: missing country_code (firstName="${firstName}", lastName="${lastName}")`);
+          totalSkipped++;
+          continue;
+        }
+        
+        // Skip only if no name data at all
+        if (!firstName && !lastName) {
+          allErrors.push(`Skipping: no name data (country_code="${countryCode}")`);
           totalSkipped++;
           continue;
         }

@@ -70,11 +70,13 @@ export async function POST(request: NextRequest) {
             active: pattern.active
           },
           create: {
+            id: pattern.name.toLowerCase().replace(/\s+/g, '-'),
             name: pattern.name,
             template: pattern.template,
             description: pattern.description,
             category: pattern.category,
-            active: pattern.active
+            active: pattern.active,
+            updatedAt: new Date()
           }
         });
         imported++;

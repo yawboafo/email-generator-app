@@ -122,7 +122,7 @@ async function main() {
     await prisma.country.upsert({
       where: { code: country.code },
       update: { name: country.name },
-      create: country,
+      create: { ...country, id: country.code, updatedAt: new Date() },
     });
     console.log(`  ✓ ${country.code} - ${country.name}`);
   }

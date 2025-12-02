@@ -117,9 +117,11 @@ async function processBatch(
               },
               update: {},
               create: {
+                id: `${countryId}-${record.firstName}-${record.gender}`,
                 name: record.firstName,
                 gender: record.gender,
                 countryId: countryId,
+                updatedAt: new Date(),
               },
             });
           }
@@ -134,8 +136,10 @@ async function processBatch(
               },
               update: {},
               create: {
+                id: `${countryId}-${record.lastName}`,
                 name: record.lastName,
                 countryId: countryId,
+                updatedAt: new Date(),
               },
             });
           }

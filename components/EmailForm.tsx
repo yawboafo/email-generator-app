@@ -144,13 +144,19 @@ export default function EmailForm({ onGenerate, isLoading, setIsLoading }: Email
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || errorData.message || 'Failed to generate emails');
+        // Combine error message and details for better user visibility
+        const errorMessage = errorData.details 
+          ? `${errorData.message}\n\n${errorData.details}`
+          : errorData.message || errorData.error || 'Failed to generate emails';
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();
       onGenerate(data.emails, data.meta, { country, pattern, providers: selectedProviders });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      const errorMessage = err instanceof Error ? err.message : 'An error occurred';
+      setError(errorMessage);
+      console.error('Email generation error:', errorMessage);
     } finally {
       setIsLoading(false);
     }

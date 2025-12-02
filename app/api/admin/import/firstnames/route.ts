@@ -62,20 +62,24 @@ export async function POST(request: NextRequest) {
               },
               update: { frequency },
               create: {
+                id: `${country.id}-${name}-${gender}`,
                 name,
                 gender,
                 countryId: country.id,
                 frequency,
+                updatedAt: new Date(),
               },
             });
           } else {
             // Add mode - only create if doesn't exist
             await prisma.firstName.create({
               data: {
+                id: `${country.id}-${name}-${gender}`,
                 name,
                 gender,
                 countryId: country.id,
                 frequency,
+                updatedAt: new Date(),
               },
             }).catch(() => {
               skipped++;

@@ -34,6 +34,7 @@ export default function EmailResults({ emails, meta, onSave }: EmailResultsProps
     unknown: 0
   });
   const previousEmailsRef = useRef<string[]>([]);
+  const verifiedEmailsHashRef = useRef<string>('');
   const itemsPerPage = 50;
 
   const totalPages = Math.ceil(emails.length / itemsPerPage);
@@ -41,21 +42,63 @@ export default function EmailResults({ emails, meta, onSave }: EmailResultsProps
   const endIndex = startIndex + itemsPerPage;
   const currentEmails = emails.slice(startIndex, endIndex);
 
-  // Auto-trigger verification when emails change
+  // Check cache and auto-verify new emails only
   useEffect(() => {
-    // Check if emails have changed
-    const emailsChanged = JSON.stringify(emails) !== JSON.stringify(previousEmailsRef.current);
+    if (emails.length === 0) return;
     
-    if (emailsChanged && emails.length > 0) {
-      previousEmailsRef.current = emails;
-      // Reset verification state
-      setVerificationStatuses(new Map());
-      setVerificationStats({ valid: 0, risky: 0, invalid: 0, unknown: 0 });
-      setVerificationProgress({ current: 0, total: emails.length });
-      // Start verification
-      verifyAllEmails();
+    const currentHash = emails.join('|');
+    const previousHash = verifiedEmailsHashRef.current;
+    
+    // If same emails, skip verification entirely (keep existing state)
+    if (currentHash === previousHash && previousHash !== '') {
+      console.log('Same emails - keeping existing verification state');
+      return;
     }
+    
+    // New emails detected - reset state and verify
+    verifiedEmailsHashRef.current = currentHash;
+    previousEmailsRef.current = emails;
+    
+    // Check cache first, then verify only uncached emails
+    console.log('New emails detected - checking cache and verifying');
+    checkCacheAndVerify();
   }, [emails]);
+  
+  // Load verification results from database cache
+  const loadVerificationFromCache = async () => {
+    try {
+      const response = await fetch('/api/verify-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ emails, skipVerification: true }),
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.results) {
+          const statusMap = new Map();
+          data.results.forEach((result: VerificationResult) => {
+            statusMap.set(result.email, result);
+          });
+          setVerificationStatuses(statusMap);
+          
+          if (data.stats) {
+            setVerificationStats(data.stats);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error loading cache:', error);
+    }
+  };
+  
+  // Check cache first, verify only new emails
+  const checkCacheAndVerify = async () => {
+    setVerificationStatuses(new Map());
+    setVerificationStats({ valid: 0, risky: 0, invalid: 0, unknown: 0 });
+    setVerificationProgress({ current: 0, total: emails.length });
+    verifyAllEmails();
+  };
 
   // Verify all emails in batches
   const verifyAllEmails = async () => {

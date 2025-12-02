@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
         await prisma.emailProvider.upsert({
           where: { providerId },
           update: mode === 'replace' ? { name, domain, popularity, active } : {},
-          create: { providerId, name, domain, popularity, active },
+          create: { id: providerId, providerId, name, domain, popularity, active, updatedAt: new Date() },
         });
 
         imported++;

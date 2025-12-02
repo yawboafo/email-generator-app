@@ -33,6 +33,7 @@
     "@tiptap/starter-kit": "^3.11.0",
     "@uiw/react-md-editor": "^4.0.8",
     "axios": "^1.13.2",
+    "cheerio": "^1.1.2",
     "dotenv": "^17.2.3",
     "fast-csv": "^5.0.5",
     "mailgun.js": "^12.2.0",

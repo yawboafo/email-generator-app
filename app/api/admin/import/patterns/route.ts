@@ -38,11 +38,11 @@ export async function POST(request: NextRequest) {
               type_value: { type, value },
             },
             update: {},
-            create: { type, value },
+            create: { id: `${type}-${value}`, type, value, updatedAt: new Date() },
           });
         } else {
           await prisma.patternElement.create({
-            data: { type, value },
+            data: { id: `${type}-${value}`, type, value, updatedAt: new Date() },
           }).catch(() => {
             skipped++;
           });

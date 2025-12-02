@@ -1,0 +1,140 @@
+Starting bulk upload at Tue Dec  2 20:37:52 GMT 2025
+[AE.csv] Status: 000
+000
+[AE.csv] Response: Error: 
+Error: 
+
+[AF.csv] Status: 000
+000
+[AF.csv] Response: Error: 
+Error: 
+
+[AL.csv] Status: 000
+000
+[AL.csv] Response: Error: 
+Error: 
+
+[AO.csv] Status: 000
+000
+[AO.csv] Response: Error: 
+Error: 
+
+[AR.csv] Status: 000
+000
+[AR.csv] Response: Error: 
+Error: 
+
+[AT.csv] Status: 000
+000
+[AT.csv] Response: Error: 
+Error: 
+
+[AZ.csv] Status: 000
+000
+[AZ.csv] Response: Error: 
+Error: 
+
+[BD.csv] Status: 000
+000
+[BD.csv] Response: Error: 
+Error: 
+
+[BE.csv] Status: 000
+000
+[BE.csv] Response: Error: 
+Error: 
+
+[BF.csv] Status: 000
+000
+[BF.csv] Response: Error: 
+Error: 
+
+[BG.csv] Status: 000
+000
+[BG.csv] Response: Error: 
+Error: 
+
+[BH.csv] Status: 000
+000
+[BH.csv] Response: Error: 
+Error: 
+
+[BI.csv] Status: 000
+000
+[BI.csv] Response: Error: 
+Error: 
+
+[BN.csv] Status: 000
+000
+[BN.csv] Response: Error: 
+Error: 
+
+[BO.csv] Status: 000
+000
+[BO.csv] Response: Error: 
+Error: 
+
+[BR.csv] Status: 000
+[BR.csv] Response: Error: Invalid string length
+
+[BW.csv] Status: 000
+000
+[BW.csv] Response: Error: 
+Error: 
+
+[CA.csv] Status: 000
+000
+[CA.csv] Response: Error: 
+Error: 
+
+[CH.csv] Status: 000
+000
+[CH.csv] Response: Reading CSV file: /Users/nykb/Desktop/name_dataset/data/CH.csv
+Error: 
+Error: 
+
+[CL.csv] Status: 000
+[CL.csv] Response: Reading CSV file: /Users/nykb/Desktop/name_dataset/data/CL.csv
+Reading CSV file...
+Parsing CSV data...
+Parsed 6888349 records
+Uploading to API...
+Error: Invalid string length
+RangeError: Invalid string length
+    at JSON.stringify (<anonymous>)
+    at /Users/nykb/email-generator-app/upload-csv-helper.js:57:26
+    at new Promise (<anonymous>)
+    at uploadData (/Users/nykb/email-generator-app/upload-csv-helper.js:55:10)
+    at /Users/nykb/email-generator-app/upload-csv-helper.js:123:11
+    at Object.<anonymous> (/Users/nykb/email-generator-app/upload-csv-helper.js:132:3)
+    at Module._compile (node:internal/modules/cjs/loader:1521:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1623:10)
+    at Module.load (node:internal/modules/cjs/loader:1266:32)
+    at Module._load (node:internal/modules/cjs/loader:1091:12)
+
+[CM.csv] Status: 000
+000
+[CM.csv] Response: Reading CSV file: /Users/nykb/Desktop/name_dataset/data/CM.csv
+Reading CSV file...
+Parsing CSV data...
+Parsed 1997552 records
+Uploading to API...
+Error: 
+Error: 
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1122:18)
+    at afterConnectMultiple (node:net:1689:7)
+
+[CN.csv] Status: 000
+000
+[CN.csv] Response: Reading CSV file: /Users/nykb/Desktop/name_dataset/data/CN.csv
+Reading CSV file...
+Parsing CSV data...
+Parsed 625598 records
+Uploading to API...
+Error: 
+Error: 
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1122:18)
+    at afterConnectMultiple (node:net:1689:7)
+

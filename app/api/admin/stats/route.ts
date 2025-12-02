@@ -20,7 +20,7 @@ export async function GET() {
 
     // Get sample data
     const countries = await prisma.country.findMany({
-      select: { code: true, name: true, _count: { select: { firstNames: true, lastNames: true, cities: true } } },
+      select: { code: true, name: true, _count: { select: { FirstName: true, LastName: true, City: true } } },
     });
 
     return NextResponse.json({

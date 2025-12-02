@@ -1,0 +1,205 @@
+Starting bulk upload at Tue Dec  2 20:41:59 GMT 2025
+[AE.csv] Status: 500
+[AE.csv] Response: Reading CSV file: /Users/nykb/Desktop/name_dataset/data/AE.csv
+Reading CSV file...
+Parsing CSV data...
+Parsed 6792773 records
+Uploading to API...
+{"error":"Cannot create a string longer than 0x1fffffe8 characters"}
+
+[AF.csv] Status: 000
+000
+[AF.csv] Response: Reading CSV file: /Users/nykb/Desktop/name_dataset/data/AF.csv
+Reading CSV file...
+Parsing CSV data...
+Parsed 558327 records
+Uploading to API...
+Error: socket hang up
+Error: socket hang up
+Error: socket hang up
+    at Socket.socketOnEnd (node:_http_client:528:25)
+    at Socket.emit (node:events:536:35)
+    at endReadableNT (node:internal/streams/readable:1698:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:82:21)
+
+[AL.csv] Status: 000
+000
+[AL.csv] Response: Reading CSV file: /Users/nykb/Desktop/name_dataset/data/AL.csv
+Reading CSV file...
+Parsing CSV data...
+Parsed 506582 records
+Uploading to API...
+Error: 
+Error: 
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1122:18)
+    at afterConnectMultiple (node:net:1689:7)
+
+[AO.csv] Status: 000
+000
+[AO.csv] Response: Reading CSV file: /Users/nykb/Desktop/name_dataset/data/AO.csv
+Reading CSV file...
+Parsing CSV data...
+Parsed 508751 records
+Uploading to API...
+Error: 
+Error: 
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1122:18)
+    at afterConnectMultiple (node:net:1689:7)
+
+[AR.csv] Status: 000
+000
+[AR.csv] Response: Reading CSV file: /Users/nykb/Desktop/name_dataset/data/AR.csv
+Reading CSV file...
+Parsing CSV data...
+Parsed 2339235 records
+Uploading to API...
+Error: 
+Error: 
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1122:18)
+    at afterConnectMultiple (node:net:1689:7)
+
+[AT.csv] Status: 000
+000
+[AT.csv] Response: Reading CSV file: /Users/nykb/Desktop/name_dataset/data/AT.csv
+Reading CSV file...
+Parsing CSV data...
+Parsed 1249295 records
+Uploading to API...
+Error: 
+Error: 
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1122:18)
+    at afterConnectMultiple (node:net:1689:7)
+
+[AZ.csv] Status: 000
+000
+[AZ.csv] Response: Reading CSV file: /Users/nykb/Desktop/name_dataset/data/AZ.csv
+Reading CSV file...
+Parsing CSV data...
+Parsed 99455 records
+Uploading to API...
+Error: 
+Error: 
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1122:18)
+    at afterConnectMultiple (node:net:1689:7)
+
+[BD.csv] Status: 000
+000
+[BD.csv] Response: Reading CSV file: /Users/nykb/Desktop/name_dataset/data/BD.csv
+Reading CSV file...
+Parsing CSV data...
+Parsed 3793325 records
+Uploading to API...
+Error: 
+Error: 
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1122:18)
+    at afterConnectMultiple (node:net:1689:7)
+
+[BE.csv] Status: 000
+000
+[BE.csv] Response: Reading CSV file: /Users/nykb/Desktop/name_dataset/data/BE.csv
+Reading CSV file...
+Parsing CSV data...
+Parsed 3183089 records
+Uploading to API...
+Error: 
+Error: 
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1122:18)
+    at afterConnectMultiple (node:net:1689:7)
+
+[BF.csv] Status: 000
+000
+[BF.csv] Response: Reading CSV file: /Users/nykb/Desktop/name_dataset/data/BF.csv
+Reading CSV file...
+Parsing CSV data...
+Parsed 6413 records
+Uploading to API...
+Error: 
+Error: 
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1122:18)
+    at afterConnectMultiple (node:net:1689:7)
+
+[BG.csv] Status: 000
+000
+[BG.csv] Response: Reading CSV file: /Users/nykb/Desktop/name_dataset/data/BG.csv
+Reading CSV file...
+Parsing CSV data...
+Parsed 431916 records
+Uploading to API...
+Error: 
+Error: 
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1122:18)
+    at afterConnectMultiple (node:net:1689:7)
+
+[BH.csv] Status: 000
+000
+[BH.csv] Response: Reading CSV file: /Users/nykb/Desktop/name_dataset/data/BH.csv
+Reading CSV file...
+Parsing CSV data...
+Parsed 1416047 records
+Uploading to API...
+Error: 
+Error: 
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1122:18)
+    at afterConnectMultiple (node:net:1689:7)
+
+[BI.csv] Status: 000
+000
+[BI.csv] Response: Reading CSV file: /Users/nykb/Desktop/name_dataset/data/BI.csv
+Reading CSV file...
+Parsing CSV data...
+Parsed 15707 records
+Uploading to API...
+Error: 
+Error: 
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1122:18)
+    at afterConnectMultiple (node:net:1689:7)
+
+[BN.csv] Status: 000
+000
+[BN.csv] Response: Reading CSV file: /Users/nykb/Desktop/name_dataset/data/BN.csv
+Reading CSV file...
+Parsing CSV data...
+Parsed 213563 records
+Uploading to API...
+Error: 
+Error: 
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1122:18)
+    at afterConnectMultiple (node:net:1689:7)
+
+[BO.csv] Status: 000
+[BO.csv] Response: Reading CSV file: /Users/nykb/Desktop/name_dataset/data/BO.csv
+Reading CSV file...
+Parsing CSV data...
+Parsed 2953155 records
+Uploading to API...
+Error: 
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1122:18)
+    at afterConnectMultiple (node:net:1689:7)
+
+[BR.csv] Status: 000
+[BR.csv] Response: Reading CSV file: /Users/nykb/Desktop/name_dataset/data/BR.csv
+Reading CSV file...
+Parsing CSV data...
+Parsed 8053833 records
+Uploading to API...
+Splitting into 162 chunks of max 50000 records
+Uploading chunk 1/162 (50000 records)...
+  ✗ Chunk 1: Error - 
+Error: 
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1122:18)
+    at afterConnectMultiple (node:net:1689:7)
+

@@ -1,0 +1,82 @@
+{
+  "US": [
+    "newyork", "losangeles", "chicago", "houston", "phoenix", "philadelphia", "sanantonio", "sandiego", 
+    "dallas", "austin", "jacksonville", "fortworth", "columbus", "charlotte", "sanfrancisco", "indianapolis",
+    "seattle", "denver", "washington", "boston", "elpaso", "nashville", "detroit", "oklahoma", "portland",
+    "lasvegas", "memphis", "louisville", "baltimore", "milwaukee", "albuquerque", "tucson", "fresno",
+    "mesa", "sacramento", "atlanta", "kansascity", "colorado", "omaha", "raleigh", "miami", "oakland",
+    "minneapolis", "tulsa", "wichita", "neworleans", "arlington", "cleveland", "tampa", "bakersfield",
+    "aurora", "honolulu", "anaheim", "santaana", "riverside", "corpuschristi", "lexington", "stockton",
+    "henderson", "saintpaul", "stlouis", "cincinnati", "pittsburgh", "greensboro", "anchorage", "plano",
+    "lincoln", "orlando", "irvine", "newark", "toledo", "durham", "chula", "fortwayne", "jersey",
+    "chandler", "madison", "lubbock", "scottsdale", "reno", "buffalo", "gilbert", "glendale", "northlas"
+  ],
+  "GB": [
+    "london", "birmingham", "manchester", "leeds", "liverpool", "sheffield", "bristol", "edinburgh",
+    "leicester", "coventry", "bradford", "cardiff", "belfast", "nottingham", "kingston", "plymouth",
+    "stoke", "wolverhampton", "derby", "swansea", "southampton", "salford", "aberdeen", "westminster",
+    "portsmouth", "york", "peterborough", "dundee", "lancaster", "oxford", "newport", "preston",
+    "canterbury", "carlisle", "cambridge", "norwich", "exeter", "gloucester", "chester", "salisbury"
+  ],
+  "CA": [
+    "toronto", "montreal", "vancouver", "calgary", "edmonton", "ottawa", "winnipeg", "quebec",
+    "hamilton", "kitchener", "london", "victoria", "halifax", "oshawa", "windsor", "saskatoon",
+    "regina", "sherbrooke", "barrie", "kelowna", "abbotsford", "kingston", "sudbury", "saguenay",
+    "thunderbay", "guelph", "moncton", "brantford", "stjohns", "peterborough", "kamloops", "nanaimo"
+  ],
+  "AU": [
+    "sydney", "melbourne", "brisbane", "perth", "adelaide", "goldcoast", "newcastle", "canberra",
+    "wollongong", "logan", "geelong", "hobart", "townsville", "cairns", "darwin", "toowoomba",
+    "ballarat", "bendigo", "albury", "launceston", "mackay", "rockhampton", "bunbury", "bundaberg",
+    "wagga", "hervey", "mildura", "shepparton", "portmacquarie", "gladstone", "tamworth", "nowra"
+  ],
+  "DE": [
+    "berlin", "hamburg", "munich", "cologne", "frankfurt", "stuttgart", "dusseldorf", "dortmund",
+    "essen", "leipzig", "bremen", "dresden", "hanover", "nuremberg", "duisburg", "bochum",
+    "wuppertal", "bielefeld", "bonn", "munster", "karlsruhe", "mannheim", "augsburg", "wiesbaden",
+    "gelsenkirchen", "monchengladbach", "braunschweig", "chemnitz", "kiel", "aachen", "halle",
+    "magdeburg", "freiburg", "krefeld", "lubeck", "oberhausen", "erfurt", "mainz", "rostock"
+  ],
+  "FR": [
+    "paris", "marseille", "lyon", "toulouse", "nice", "nantes", "strasbourg", "montpellier",
+    "bordeaux", "lille", "rennes", "reims", "saintenne", "toulon", "angers", "grenoble",
+    "dijon", "nimes", "aix", "lemans", "brest", "tours", "amiens", "limoges", "annecy",
+    "perpignan", "boulogne", "metz", "besancon", "orleans", "saindetienne", "rouen", "mulhouse"
+  ],
+  "ES": [
+    "madrid", "barcelona", "valencia", "seville", "zaragoza", "malaga", "murcia", "palma",
+    "laspalmas", "bilbao", "alicante", "cordoba", "valladolid", "vigo", "gijon", "hospitalet",
+    "coruna", "vitoria", "granada", "elche", "oviedo", "santacruz", "badalona", "cartagena",
+    "terrassa", "jerez", "sabadell", "mostoles", "santander", "pamplona", "almeria", "leganes"
+  ],
+  "IT": [
+    "rome", "milan", "naples", "turin", "palermo", "genoa", "bologna", "florence",
+    "bari", "catania", "venice", "verona", "messina", "padua", "trieste", "taranto",
+    "brescia", "parma", "prato", "modena", "reggio", "perugia", "livorno", "cagliari",
+    "foggia", "rimini", "salerno", "ferrara", "ravenna", "monza", "latina", "siracusa"
+  ],
+  "JP": [
+    "tokyo", "yokohama", "osaka", "nagoya", "sapporo", "fukuoka", "kobe", "kyoto",
+    "kawasaki", "saitama", "hiroshima", "sendai", "kitakyushu", "chiba", "sakai", "niigata",
+    "hamamatsu", "kumamoto", "sagamihara", "shizuoka", "okayama", "kagoshima", "hachioji", "himeji",
+    "matsuyama", "utsunomiya", "matsudo", "kawaguchi", "gifu", "kanazawa", "toyama", "toyonaka"
+  ],
+  "IN": [
+    "mumbai", "delhi", "bangalore", "hyderabad", "ahmedabad", "chennai", "kolkata", "pune",
+    "jaipur", "surat", "lucknow", "kanpur", "nagpur", "indore", "thane", "bhopal",
+    "visakhapatnam", "pimpri", "patna", "vadodara", "ghaziabad", "ludhiana", "agra", "nashik",
+    "faridabad", "meerut", "rajkot", "kalyan", "vasai", "varanasi", "srinagar", "aurangabad"
+  ],
+  "BR": [
+    "saopaulo", "riodejaneiro", "brasilia", "salvador", "fortaleza", "belohorizonte", "manaus", "curitiba",
+    "recife", "goiania", "portoalegre", "guarulhos", "campinas", "saoluis", "saoconclaves", "maceio",
+    "duquedecaxias", "natal", "campogrande", "teresina", "saobernardo", "novaiguacu", "joaopessoa", "santoandre",
+    "osasco", "saojosedoscampos", "jaboatao", "ribeiraopreto", "uberlandia", "sorocaba", "contagem", "aracaju"
+  ],
+  "MX": [
+    "mexicocity", "guadalajara", "monterrey", "puebla", "tijuana", "leon", "juarez", "torreon",
+    "queretaro", "sanluispotosi", "merida", "aguascalientes", "hermosillo", "saltillo", "mexicali", "culiacan",
+    "acapulco", "tlalnepantla", "cancun", "chihuahua", "naucalpan", "tampico", "veracruz", "reynosa",
+    "tuxtla", "toluca", "morelia", "villahermosa", "irapuato", "mazatlan", "celaya", "cuernavaca"
+  ]
+}

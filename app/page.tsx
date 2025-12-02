@@ -8,6 +8,7 @@ import SaveEmailsModal from '@/components/SaveEmailsModal';
 import SavedEmailsList from '@/components/SavedEmailsList';
 import EmailProviderConfig, { EmailProviderKeys } from '@/components/EmailProviderConfig';
 import RichTextEditor from '@/components/RichTextEditor';
+import RealEmailFinder from '@/components/RealEmailFinder';
 import { SavedEmailBatch, Country, NamePattern } from '@/types';
 import { saveEmailBatch, getSavedEmailBatches } from '@/lib/storage';
 
@@ -15,7 +16,7 @@ export default function Home() {
   const [emails, setEmails] = useState<string[]>([]);
   const [meta, setMeta] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'generate' | 'send' | 'verify' | 'saved'>('generate');
+  const [activeTab, setActiveTab] = useState<'generate' | 'send' | 'verify' | 'saved' | 'findreal'>('generate');
   const [generatorMode, setGeneratorMode] = useState<'standard' | 'ai'>('standard');
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [savedBatchCount, setSavedBatchCount] = useState(0);
@@ -254,14 +255,27 @@ export default function Home() {
       const data = await response.json();
       
       if (!response.ok) {
-        throw new Error(data.error || 'Verification failed');
+        // Show detailed error message from API
+        const errorMsg = data.details 
+          ? `${data.error}\n\nDetails: ${data.details}${data.provider ? `\nProvider: ${data.provider}` : ''}` 
+          : data.error || 'Verification failed';
+        throw new Error(errorMsg);
       }
 
       setVerifyResults(data.results || []);
       setVerifyStats(data.stats || null);
+      
+      // Show warning if there were errors during verification
+      if (data.stats?.error > 0) {
+        const errorEmails = data.results.filter((r: any) => r.status === 'error');
+        if (errorEmails.length > 0) {
+          console.warn('Some emails failed to verify:', errorEmails);
+        }
+      }
     } catch (error) {
       console.error('Verification error:', error);
-      alert(`Verification failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      alert(`❌ Verification Failed\n\n${errorMessage}\n\nPlease check:\n• API key is valid\n• You have remaining credits/quota\n• Network connection is stable`);
     } finally {
       setIsVerifying(false);
     }
@@ -332,15 +346,26 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Quick Stats */}
-            {savedBatchCount > 0 && (
-              <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-slate-100 rounded-lg">
-                <svg className="w-4 h-4 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9a2 2 0 00-2 2v5a2 2 0 01-2 2z" />
+            {/* Quick Actions */}
+            <div className="flex items-center gap-3">
+              {savedBatchCount > 0 && (
+                <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-slate-100 rounded-lg">
+                  <svg className="w-4 h-4 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9a2 2 0 00-2 2v5a2 2 0 01-2 2z" />
+                  </svg>
+                  <span className="text-sm font-medium text-slate-700">{savedBatchCount} Saved</span>
+                </div>
+              )}
+              <a
+                href="/admin"
+                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-lg transition-all duration-300 font-medium text-sm shadow-md hover:shadow-lg"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
                 </svg>
-                <span className="text-sm font-medium text-slate-700">{savedBatchCount} Saved</span>
-              </div>
-            )}
+                Admin
+              </a>
+            </div>
           </div>
         </div>
       </header>
@@ -351,6 +376,7 @@ export default function Home() {
           <nav className="inline-flex bg-white rounded-2xl p-1 gap-1 shadow-md border border-slate-200">
             {[
               { id: 'generate', label: 'Generate', icon: 'M12 6v6m0 0v6m0-6h6m-6 0H6' },
+              { id: 'findreal', label: 'Find Real', icon: 'M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z', badge: 'NEW' },
               { id: 'send', label: 'Send', icon: 'M12 19l9 2-9-18-9 18 9-2zm0 0v-8' },
               { id: 'verify', label: 'Verify', icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z' },
               { id: 'saved', label: 'Saved', icon: 'M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9a2 2 0 00-2 2v5a2 2 0 01-2 2z' }
@@ -369,6 +395,11 @@ export default function Home() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={tab.icon} />
                   </svg>
                   {tab.label}
+                  {'badge' in tab && tab.badge === 'NEW' && (
+                    <span className="ml-1.5 px-2 py-0.5 bg-green-500 text-white text-xs font-bold rounded-full animate-pulse">
+                      NEW
+                    </span>
+                  )}
                   {tab.id === 'saved' && savedBatchCount > 0 && (
                     <span className="ml-1.5 px-2 py-0.5 bg-white/20 text-xs font-bold rounded-full">
                       {savedBatchCount}
@@ -1455,6 +1486,33 @@ email3@example.com"
                   <p className="text-sm text-slate-600 mt-4">Loading verified emails from database...</p>
                 </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* Find Real Emails Tab */}
+        {activeTab === 'findreal' && (
+          <div className="max-w-6xl mx-auto">
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-lg p-8">
+              <div className="mb-6">
+                <h2 className="text-2xl font-bold text-slate-900 mb-2">Find Real Emails</h2>
+                <p className="text-slate-600">
+                  Search for actual, existing email addresses using web scraping and professional email finder APIs.
+                  These are real emails from verified sources, not synthetic combinations.
+                </p>
+              </div>
+              <RealEmailFinder 
+                onEmailsFound={(foundEmails) => {
+                  setEmails(foundEmails);
+                  setMeta({ 
+                    count: foundEmails.length, 
+                    mode: 'real-finder',
+                    timestamp: new Date().toISOString()
+                  });
+                  // Optionally switch to verify tab to check the found emails
+                  // setActiveTab('verify');
+                }} 
+              />
             </div>
           </div>
         )}

@@ -201,6 +201,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // If no country selected, pick a random one from the database
+    if (!body.country) {
+      const { getRandomCountry } = await import('@/lib/emailGeneratorDb');
+      body.country = await getRandomCountry();
+    }
+
     // Generate emails based on selected method
     let emails: string[];
     
@@ -252,10 +258,31 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Error generating emails:', error);
     
+    // Provide detailed error messages for common issues
+    let errorMessage = 'An unexpected error occurred';
+    let errorDetails = '';
+    
+    if (error instanceof Error) {
+      errorMessage = error.message;
+      
+      // Add helpful context for common errors
+      if (errorMessage.includes('No first names found') || errorMessage.includes('No last names found')) {
+        errorDetails = 'The selected country does not have name data in the database. Please select a different country or import name data from the admin panel.';
+      } else if (errorMessage.includes('Country') && errorMessage.includes('not found')) {
+        errorDetails = 'The specified country does not exist in the database. Please select a valid country.';
+      } else if (errorMessage.includes('No active providers found')) {
+        errorDetails = 'No email providers are available. Please ensure at least one provider is active in the database.';
+      } else if (errorMessage.includes('No countries with name data found')) {
+        errorDetails = 'No countries have name data in the database. Please import name data from the admin panel first.';
+      }
+    }
+    
     return NextResponse.json(
       { 
-        error: 'Internal server error',
-        message: error instanceof Error ? error.message : 'An unexpected error occurred'
+        error: 'Failed to generate emails',
+        message: errorMessage,
+        details: errorDetails || undefined,
+        timestamp: new Date().toISOString()
       },
       { status: 500 }
     );

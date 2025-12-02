@@ -33,8 +33,10 @@ async function main() {
       where: { code },
       update: {},
       create: {
+        id: code,
         code,
         name: countryMap[code] || code,
+        updatedAt: new Date(),
       },
     });
 
@@ -53,10 +55,12 @@ async function main() {
           },
           update: {},
           create: {
+            id: `${country.id}-${name}-male`,
             name,
             gender: 'male',
             countryId: country.id,
             frequency: 1,
+            updatedAt: new Date(),
           },
         });
       }
@@ -75,10 +79,12 @@ async function main() {
           },
           update: {},
           create: {
+            id: `${country.id}-${name}-female`,
             name,
             gender: 'female',
             countryId: country.id,
             frequency: 1,
+            updatedAt: new Date(),
           },
         });
       }
@@ -97,10 +103,12 @@ async function main() {
           },
           update: {},
           create: {
+            id: `${country.id}-${name}-neutral`,
             name,
             gender: 'neutral',
             countryId: country.id,
             frequency: 1,
+            updatedAt: new Date(),
           },
         });
       }
@@ -118,9 +126,11 @@ async function main() {
           },
           update: {},
           create: {
+            id: `${country.id}-${name}`,
             name,
             countryId: country.id,
             frequency: 1,
+            updatedAt: new Date(),
           },
         });
       }
@@ -138,8 +148,10 @@ async function main() {
           },
           update: {},
           create: {
+            id: `${country.id}-${name}`,
             name,
             countryId: country.id,
+            updatedAt: new Date(),
           },
         });
       }
@@ -160,11 +172,13 @@ async function main() {
         popularity: provider.popularity,
       },
       create: {
+        id: provider.id,
         providerId: provider.id,
         name: provider.name,
         domain: provider.domain,
         popularity: provider.popularity,
         active: true,
+        updatedAt: new Date(),
       },
     });
     console.log(`  ✓ ${provider.name}`);
@@ -189,8 +203,10 @@ async function main() {
           },
           update: {},
           create: {
+            id: `${type}-${value}`,
             type,
             value,
+            updatedAt: new Date(),
           },
         });
       }
@@ -236,11 +252,13 @@ async function main() {
         category: pattern.category,
       },
       create: {
+        id: pattern.name,
         name: pattern.name,
         template: pattern.template,
         description: pattern.description,
         category: pattern.category,
         active: true,
+        updatedAt: new Date(),
       },
     });
     console.log(`  ✓ ${pattern.name}`);

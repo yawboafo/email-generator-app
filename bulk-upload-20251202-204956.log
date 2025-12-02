@@ -1,0 +1,27 @@
+Starting bulk upload at Tue Dec  2 20:49:58 GMT 2025
+[AE.csv] Status: 000
+[AE.csv] Response: Reading CSV file: /Users/nykb/Desktop/name_dataset/data/AE.csv
+Reading CSV file...
+Parsing CSV data...
+Parsed 6792773 records
+Uploading to API...
+Splitting into 136 chunks of max 50000 records
+Uploading chunk 1/136 (50000 records)...
+  ✗ Chunk 1: Error - connect ETIMEDOUT 66.33.22.69:3000
+Error: connect ETIMEDOUT 66.33.22.69:3000
+Error: connect ETIMEDOUT 66.33.22.69:3000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)
+
+[AF.csv] Status: 000
+[AF.csv] Response: Reading CSV file: /Users/nykb/Desktop/name_dataset/data/AF.csv
+Reading CSV file...
+Parsing CSV data...
+Parsed 558327 records
+Uploading to API...
+Splitting into 12 chunks of max 50000 records
+Uploading chunk 1/12 (50000 records)...
+  ✗ Chunk 1: Error - connect ETIMEDOUT 66.33.22.69:3000
+Error: connect ETIMEDOUT 66.33.22.69:3000
+Error: connect ETIMEDOUT 66.33.22.69:3000
+    at TCPConnectWrap.afterConnect [as oncomplete] (node:net:1611:16)
+

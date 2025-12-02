@@ -36,11 +36,11 @@ export async function POST(request: NextRequest) {
           await prisma.country.upsert({
             where: { code },
             update: { name },
-            create: { code, name },
+            create: { id: code, code, name, updatedAt: new Date() },
           });
         } else {
           await prisma.country.create({
-            data: { code, name },
+            data: { id: code, code, name, updatedAt: new Date() },
           }).catch(() => {
             skipped++;
           });

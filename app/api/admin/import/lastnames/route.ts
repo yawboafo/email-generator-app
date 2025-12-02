@@ -57,17 +57,21 @@ export async function POST(request: NextRequest) {
               },
               update: { frequency },
               create: {
+                id: `${country.id}-${name}`,
                 name,
                 countryId: country.id,
                 frequency,
+                updatedAt: new Date(),
               },
             });
           } else {
             await prisma.lastName.create({
               data: {
+                id: `${country.id}-${name}`,
                 name,
                 countryId: country.id,
                 frequency,
+                updatedAt: new Date(),
               },
             }).catch(() => {
               skipped++;

@@ -71,9 +71,11 @@ export async function POST(request: NextRequest) {
 
         // Skip empty rows
         if (!firstName || !countryCode) {
-          if (firstName || lastName || gender || countryCode) {
-            // Only log if at least one field has data
-            errors.push(`Missing required fields: first_name="${firstName}", country_code="${countryCode}"`);
+          // Only log if this seems like a real row with some data
+          const hasAnyData = firstName || lastName || gender || countryCode;
+          if (hasAnyData && !(firstName === 'first_name' && countryCode === 'country_code')) {
+            // Skip logging if it looks like a header row
+            errors.push(`Row skipped - missing required: first_name="${firstName}", country_code="${countryCode}"`);
           }
           skipped++;
           continue;
@@ -138,9 +140,11 @@ export async function POST(request: NextRequest) {
               },
               update: {},
               create: {
+                id: `${countryId}-${record.firstName}-${record.gender}`,
                 name: record.firstName,
                 gender: record.gender,
                 countryId: countryId,
+                updatedAt: new Date(),
               },
             });
           }
@@ -156,8 +160,10 @@ export async function POST(request: NextRequest) {
               },
               update: {},
               create: {
+                id: `${countryId}-${record.lastName}`,
                 name: record.lastName,
                 countryId: countryId,
+                updatedAt: new Date(),
               },
             });
           }
@@ -175,38 +181,86 @@ export async function POST(request: NextRequest) {
       // Add mode: Skip duplicates using createMany with skipDuplicates
       const firstNamesToCreate = recordsToImport
         .filter(r => r.firstName)
-        .map(r => ({
-          name: r.firstName,
-          gender: r.gender,
-          countryId: countryIdMap.get(r.countryCode)!,
-        }));
+        .map(r => {
+          const countryId = countryIdMap.get(r.countryCode);
+          if (!countryId) {
+            errors.push(`Missing countryId for country code: ${r.countryCode}`);
+          }
+          return {
+            id: `${countryId}-${r.firstName}-${r.gender}`,
+            name: r.firstName,
+            gender: r.gender,
+            countryId: countryId!,
+            updatedAt: new Date(),
+          };
+        });
 
       const lastNamesToCreate = recordsToImport
         .filter(r => r.lastName)
-        .map(r => ({
-          name: r.lastName,
-          countryId: countryIdMap.get(r.countryCode)!,
-        }));
+        .map(r => {
+          const countryId = countryIdMap.get(r.countryCode);
+          if (!countryId) {
+            errors.push(`Missing countryId for country code: ${r.countryCode}`);
+          }
+          return {
+            id: `${countryId}-${r.lastName}`,
+            name: r.lastName,
+            countryId: countryId!,
+            updatedAt: new Date(),
+          };
+        });
 
       try {
         // Import first names in smaller batches
         for (let i = 0; i < firstNamesToCreate.length; i += 1000) {
           const batch = firstNamesToCreate.slice(i, i + 1000);
-          const result = await prisma.firstName.createMany({
-            data: batch,
-            skipDuplicates: true,
-          });
-          imported += result.count;
+          try {
+            // Validate batch data types before insertion
+            const invalidRecords = batch.filter(r => typeof r.countryId !== 'string' || !r.countryId);
+            if (invalidRecords.length > 0) {
+              errors.push(`Invalid countryId types found: ${JSON.stringify(invalidRecords.slice(0, 3))}`);
+              continue; // Skip this batch
+            }
+            
+            const result = await prisma.firstName.createMany({
+              data: batch,
+              skipDuplicates: true,
+            });
+            imported += result.count;
+          } catch (batchError: any) {
+            errors.push(`FirstName batch ${i}-${i + 1000} failed: ${batchError.message}`);
+            // Log first record in batch for debugging
+            if (batch.length > 0) {
+              const sample = batch[0];
+              errors.push(`Sample record - name: ${sample.name}, gender: ${sample.gender}, countryId: ${sample.countryId} (type: ${typeof sample.countryId})`);
+            }
+          }
         }
 
         // Import last names in smaller batches
         for (let i = 0; i < lastNamesToCreate.length; i += 1000) {
           const batch = lastNamesToCreate.slice(i, i + 1000);
-          const result = await prisma.lastName.createMany({
-            data: batch,
-            skipDuplicates: true,
-          });
-          imported += result.count;
+          try {
+            // Validate batch data types before insertion
+            const invalidRecords = batch.filter(r => typeof r.countryId !== 'string' || !r.countryId);
+            if (invalidRecords.length > 0) {
+              errors.push(`Invalid countryId types found in LastName: ${JSON.stringify(invalidRecords.slice(0, 3))}`);
+              continue; // Skip this batch
+            }
+            
+            const result = await prisma.lastName.createMany({
+              data: batch,
+              skipDuplicates: true,
+            });
+            imported += result.count;
+          } catch (batchError: any) {
+            errors.push(`LastName batch ${i}-${i + 1000} failed: ${batchError.message}`);
+            // Log first record in batch for debugging
+            if (batch.length > 0) {
+              const sample = batch[0];
+              errors.push(`Sample record - name: ${sample.name}, countryId: ${sample.countryId} (type: ${typeof sample.countryId})`);
+            }
+          }
         }
 
         skipped = recordsToImport.length - imported;

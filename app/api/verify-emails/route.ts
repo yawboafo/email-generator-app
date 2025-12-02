@@ -34,10 +34,17 @@ async function checkEmailListVerify(email: string): Promise<{
     );
 
     if (!response.ok) {
+      const errorText = await response.text().catch(() => '');
+      
       if (response.status === 429) {
-        throw new Error('Rate limit exceeded (15 requests/second)');
+        throw new Error('EmailListVerify: Rate limit exceeded (15 requests/second)');
+      } else if (response.status === 401 || response.status === 403) {
+        throw new Error(`EmailListVerify: Invalid API key or access denied (${response.status})`);
+      } else if (response.status === 402) {
+        throw new Error('EmailListVerify: Payment required - check your subscription');
+      } else {
+        throw new Error(`EmailListVerify API error: ${response.status}${errorText ? ` - ${errorText}` : ''}`);
       }
-      throw new Error(`EmailListVerify API error: ${response.status}`);
     }
 
     const data = await response.text();
@@ -131,10 +138,17 @@ async function checkEmailListVerifyDetailed(email: string): Promise<{
     );
 
     if (!response.ok) {
+      const errorText = await response.text().catch(() => '');
+      
       if (response.status === 429) {
-        throw new Error('Rate limit exceeded (15 requests/second)');
+        throw new Error('EmailListVerify Detailed: Rate limit exceeded (15 requests/second)');
+      } else if (response.status === 401 || response.status === 403) {
+        throw new Error(`EmailListVerify Detailed: Invalid API key or access denied (${response.status})`);
+      } else if (response.status === 402) {
+        throw new Error('EmailListVerify Detailed: Payment required - check your subscription');
+      } else {
+        throw new Error(`EmailListVerify Detailed API error: ${response.status}${errorText ? ` - ${errorText}` : ''}`);
       }
-      throw new Error(`EmailListVerify API error: ${response.status}`);
     }
 
     const data = await response.json();
@@ -190,7 +204,20 @@ async function checkEmailMailboxlayer(email: string): Promise<{
     );
 
     if (!response.ok) {
-      throw new Error(`Mailboxlayer API error: ${response.status}`);
+      const errorData = await response.json().catch(() => null);
+      let errorMsg = `Mailboxlayer API error: ${response.status}`;
+      
+      if (response.status === 401 || response.status === 403) {
+        errorMsg = 'Mailboxlayer: Invalid API key or unauthorized access';
+      } else if (response.status === 429) {
+        errorMsg = 'Mailboxlayer: Rate limit exceeded';
+      } else if (response.status === 104) {
+        errorMsg = 'Mailboxlayer: Monthly quota exceeded - upgrade your plan';
+      } else if (errorData?.error?.info) {
+        errorMsg = `Mailboxlayer: ${errorData.error.info}`;
+      }
+      
+      throw new Error(errorMsg);
     }
 
     const data = await response.json();
@@ -244,7 +271,7 @@ async function checkEmailMailboxlayer(email: string): Promise<{
   }
 }
 
-// Check email using Mails.so API
+// Check email using Email.so API
 async function checkEmailMailsSo(email: string): Promise<{
   exists: boolean;
   reason: string;
@@ -257,65 +284,70 @@ async function checkEmailMailsSo(email: string): Promise<{
       {
         method: 'GET',
         headers: {
-          'x-mails-api-key': MAILSSO_API_KEY,
+          'x-mails-api-key': MAILSSO_API_KEY
         },
         signal: AbortSignal.timeout(15000),
       }
     );
 
     if (!response.ok) {
-      throw new Error(`Mails.so API error: ${response.status}`);
+      const errorData = await response.json().catch(() => null);
+      let errorMsg = `Mails.so API error: ${response.status}`;
+      
+      if (response.status === 401) {
+        errorMsg = 'Mails.so API: Invalid or expired API key';
+      } else if (response.status === 429) {
+        errorMsg = 'Mails.so API: Rate limit exceeded or quota reached';
+      } else if (response.status === 403) {
+        errorMsg = 'Mails.so API: Access forbidden - check your subscription';
+      } else if (errorData?.error) {
+        errorMsg = `Mails.so API: ${errorData.error}`;
+      }
+      
+      throw new Error(errorMsg);
     }
 
-    const result = await response.json();
-    const data = result.data;
+    const responseData = await response.json();
+    const data = responseData.data;
+    
+    if (!data) {
+      throw new Error('Invalid response from Mails.so API');
+    }
     
     // Map Mails.so result to our status format
+    // mails.so returns: { data: { result, reason, score, etc. }, error }
     let status: 'ok' | 'email_disabled' | 'invalid_mx' | 'disposable' | 'ok_for_all' | 'unknown' | 'invalid_syntax';
     let exists = false;
-    let reason = data.reason || 'Unknown';
+    let reason = '';
     
-    // Check result type from Mails.so
+    // Check result from mails.so
     if (data.result === 'deliverable') {
       status = 'ok';
       exists = true;
-      reason = 'Email is valid and deliverable';
-    } else if (data.result === 'undeliverable') {
-      // Check specific reason
-      if (data.reason === 'invalid_format' || data.reason === 'invalid_domain') {
-        status = 'invalid_syntax';
-        reason = 'Email format or domain is invalid';
-      } else if (data.reason === 'invalid_smtp' || data.reason === 'rejected_email') {
-        status = 'email_disabled';
-        reason = 'Email address does not exist or is disabled';
-      } else if (!data.isv_mx) {
-        status = 'invalid_mx';
-        reason = 'Invalid MX record';
-      } else {
-        status = 'email_disabled';
-        reason = 'Email is undeliverable';
-      }
-      exists = false;
+      reason = `Email is valid and deliverable (score: ${data.score})`;
     } else if (data.result === 'risky') {
-      // Handle risky emails
-      if (data.reason === 'catch_all') {
-        status = 'ok_for_all';
-        exists = true;
-        reason = 'Domain accepts all emails (catch-all)';
-      } else if (data.reason === 'disposable' || data.is_disposable) {
+      status = 'ok_for_all';
+      exists = true;
+      reason = `Email is risky - ${data.reason} (score: ${data.score})`;
+    } else if (data.result === 'undeliverable') {
+      if (data.reason === 'invalid_format') {
+        status = 'invalid_syntax';
+        reason = 'Invalid email format';
+      } else if (data.reason === 'invalid_domain') {
+        status = 'invalid_mx';
+        reason = 'Invalid domain';
+      } else if (data.reason === 'disposable') {
         status = 'disposable';
-        exists = false;
         reason = 'Disposable email address';
       } else {
-        status = 'ok_for_all';
-        exists = true;
-        reason = 'Email is risky but may be deliverable';
+        status = 'email_disabled';
+        reason = `Email does not exist - ${data.reason}`;
       }
+      exists = false;
     } else {
-      // Unknown result
       status = 'unknown';
       exists = false;
-      reason = 'Unable to verify email';
+      reason = `Unable to verify - ${data.reason || 'unknown'}`;
     }
     
     return {
@@ -658,8 +690,34 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Email verification error:', error);
+    
+    // Extract detailed error message
+    let errorMessage = 'Failed to verify emails';
+    let details = 'Unknown error';
+    
+    if (error instanceof Error) {
+      details = error.message;
+      
+      // Check for common error patterns
+      if (error.message.includes('API key') || error.message.includes('401') || error.message.includes('403') || error.message.includes('unauthorized')) {
+        errorMessage = 'API Authentication Failed';
+      } else if (error.message.includes('rate limit') || error.message.includes('429')) {
+        errorMessage = 'Rate Limit Exceeded';
+      } else if (error.message.includes('quota') || error.message.includes('subscription') || error.message.includes('402') || error.message.includes('104')) {
+        errorMessage = 'Quota or Subscription Issue';
+      } else if (error.message.includes('timeout')) {
+        errorMessage = 'Request Timeout';
+      } else if (error.message.includes('network') || error.message.includes('ECONNREFUSED') || error.message.includes('ENOTFOUND')) {
+        errorMessage = 'Network Connection Error';
+      }
+    }
+    
     return NextResponse.json(
-      { error: 'Failed to verify emails', details: error instanceof Error ? error.message : 'Unknown error' },
+      { 
+        error: errorMessage, 
+        details: details,
+        provider: method || 'unknown'
+      },
       { status: 500 }
     );
   }

@@ -13,7 +13,24 @@ const globalForPrisma = globalThis as unknown as {
 // Create connection pool singleton
 if (!globalForPrisma.pool) {
   globalForPrisma.pool = new pg.Pool({ 
-    connectionString: process.env.DATABASE_URL 
+    connectionString: process.env.DATABASE_URL,
+    max: 2, // Reduce max connections
+    idleTimeoutMillis: 10000, // Shorter idle timeout
+    connectionTimeoutMillis: 8000, // Shorter connection timeout
+    query_timeout: 5000, // 5 second query timeout
+    keepAlive: true,
+    keepAliveInitialDelayMillis: 0,
+    ssl: false, // Disable SSL for Railway proxy
+  });
+  
+  // Handle pool errors
+  globalForPrisma.pool.on('error', (err) => {
+    console.error('Unexpected database pool error:', err);
+  });
+  
+  // Log successful connections
+  globalForPrisma.pool.on('connect', () => {
+    console.log('✓ Database connection established');
   });
 }
 

@@ -57,17 +57,21 @@ export async function POST(request: NextRequest) {
               },
               update: { population },
               create: {
+                id: `${country.id}-${name}`,
                 name,
                 countryId: country.id,
                 population,
+                updatedAt: new Date(),
               },
             });
           } else {
             await prisma.city.create({
               data: {
+                id: `${country.id}-${name}`,
                 name,
                 countryId: country.id,
                 population,
+                updatedAt: new Date(),
               },
             }).catch(() => {
               skipped++;

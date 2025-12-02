@@ -73,10 +73,12 @@ export async function saveVerificationResult(
         verificationCount: { increment: 1 }
       },
       create: {
+        id: email.toLowerCase(),
         emailAddress: email.toLowerCase(),
         status,
         verificationData: data || null,
-        verificationCount: 1
+        verificationCount: 1,
+        updatedAt: new Date()
       }
     });
   } catch (error) {
@@ -112,55 +114,72 @@ export async function verifyEmailWithCache(
 }
 
 /**
- * Verify email using external API (EmailListVerify or similar)
+ * Verify email using mails.so API
  */
 async function verifyEmailWithAPI(
   email: string,
   apiKey?: string
 ): Promise<VerificationResult> {
-  // If no API key, return unknown status
-  if (!apiKey) {
-    return {
-      email,
-      status: 'unknown',
-      reason: 'No API key provided',
-      fromCache: false
-    };
-  }
+  // Use the provided API key or default mails.so key
+  const finalApiKey = apiKey || '85e695d6-41e1-4bad-827c-bf03b11d593b';
 
   try {
-    // Example using EmailListVerify API
+    // Using mails.so API
     const response = await fetch(
-      `https://apps.emaillistverify.com/api/verifyEmail?secret=${apiKey}&email=${encodeURIComponent(email)}`,
-      { method: 'GET' }
+      `https://api.mails.so/v1/validate?email=${encodeURIComponent(email)}`,
+      { 
+        method: 'GET',
+        headers: {
+          'x-mails-api-key': finalApiKey
+        }
+      }
     );
 
     if (!response.ok) {
-      throw new Error(`API returned ${response.status}`);
+      const errorData = await response.json().catch(() => null);
+      let errorMsg = `Mails.so API error: ${response.status}`;
+      
+      if (response.status === 401) {
+        errorMsg = 'Mails.so API: Invalid or expired API key';
+      } else if (response.status === 429) {
+        errorMsg = 'Mails.so API: Rate limit exceeded';
+      } else if (errorData?.error) {
+        errorMsg = `Mails.so API: ${errorData.error}`;
+      }
+      
+      throw new Error(errorMsg);
     }
 
-    const data = await response.text();
+    const responseData = await response.json();
+    const data = responseData.data;
     
-    // Parse the response (EmailListVerify returns plain text)
+    if (!data) {
+      throw new Error('Invalid response from Mails.so API');
+    }
+    
+    // Parse mails.so response
+    // mails.so returns: { data: { result, reason, score, etc. }, error }
     let status: VerificationStatus = 'unknown';
     
-    if (data.includes('valid')) {
+    if (data.result === 'deliverable') {
       status = 'valid';
-    } else if (data.includes('risky') || data.includes('unknown') || data.includes('accept_all')) {
+    } else if (data.result === 'risky') {
       status = 'risky';
-    } else if (data.includes('invalid') || data.includes('bad') || data.includes('disposable')) {
+    } else if (data.result === 'undeliverable') {
       status = 'invalid';
+    } else {
+      status = 'unknown';
     }
 
     return {
       email,
       status,
-      reason: data,
+      reason: `${data.result} - ${data.reason} (score: ${data.score})`,
       fromCache: false,
-      data: { response: data, timestamp: new Date().toISOString() }
+      data: { ...data, timestamp: new Date().toISOString() }
     };
   } catch (error) {
-    console.error('Error verifying email with API:', error);
+    console.error('Error verifying email with mails.so API:', error);
     return {
       email,
       status: 'unknown',

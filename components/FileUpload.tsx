@@ -46,13 +46,53 @@ export default function FileUpload({ onDataParsed, onFileSelected, acceptedForma
         setPreview(dataArray.slice(0, 5));
         onDataParsed(dataArray);
       } else if (fileExt === 'csv') {
+        // Parse CSV and auto-detect if it has headers
         Papa.parse(file, {
-          header: true,
-          skipEmptyLines: true,
-          complete: (results) => {
-            setPreview(results.data.slice(0, 5));
-            onDataParsed(results.data);
-            setParsing(false);
+          preview: 1,
+          complete: (previewResult) => {
+            // Check if first row looks like headers
+            const firstRow = previewResult.data[0] as any;
+            const hasHeaders = 
+              Array.isArray(firstRow) && 
+              firstRow.some((cell: string) => 
+                typeof cell === 'string' && 
+                (cell.toLowerCase().includes('name') || 
+                 cell.toLowerCase().includes('gender') || 
+                 cell.toLowerCase().includes('country') ||
+                 cell.toLowerCase().includes('code'))
+              );
+
+            // Now parse the full file
+            Papa.parse(file, {
+              header: hasHeaders,
+              skipEmptyLines: true,
+              complete: (results) => {
+                let parsedData = results.data;
+                
+                // If no headers detected, convert array format to object format
+                if (!hasHeaders && parsedData.length > 0) {
+                  parsedData = parsedData.map((row: any) => {
+                    if (Array.isArray(row)) {
+                      return {
+                        first_name: row[0] || '',
+                        last_name: row[1] || '',
+                        gender: row[2] || '',
+                        country_code: row[3] || '',
+                      };
+                    }
+                    return row;
+                  });
+                }
+                
+                setPreview(parsedData.slice(0, 5));
+                onDataParsed(parsedData);
+                setParsing(false);
+              },
+              error: (error) => {
+                setError(`CSV parsing error: ${error.message}`);
+                setParsing(false);
+              },
+            });
           },
           error: (error) => {
             setError(`CSV parsing error: ${error.message}`);
