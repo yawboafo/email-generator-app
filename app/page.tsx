@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import EmailForm from '@/components/EmailForm';
 import AIEmailGenerator from '@/components/AIEmailGenerator';
+import VerifiedEmailGenerator from '@/components/VerifiedEmailGenerator';
 import EmailResults from '@/components/EmailResults';
 import SaveEmailsModal from '@/components/SaveEmailsModal';
 import SavedEmailsList from '@/components/SavedEmailsList';
@@ -17,7 +18,7 @@ export default function Home() {
   const [meta, setMeta] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<'generate' | 'send' | 'verify' | 'saved' | 'findreal'>('generate');
-  const [generatorMode, setGeneratorMode] = useState<'standard' | 'ai'>('standard');
+  const [generatorMode, setGeneratorMode] = useState<'standard' | 'ai' | 'verified'>('standard');
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [savedBatchCount, setSavedBatchCount] = useState(0);
   const [sendRecipients, setSendRecipients] = useState('');
@@ -431,6 +432,22 @@ export default function Home() {
                   Standard
                 </button>
                 <button
+                  onClick={() => setGeneratorMode('verified')}
+                  className={`px-6 py-3 rounded-lg font-semibold text-sm transition-all duration-300 flex items-center gap-2 ${
+                    generatorMode === 'verified'
+                      ? 'bg-gradient-to-br from-green-600 to-emerald-600 text-white shadow-lg shadow-green-500/30'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                  }`}
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Verified Only
+                  <span className="px-2 py-0.5 bg-white/20 text-xs font-bold rounded-md">
+                    PRO
+                  </span>
+                </button>
+                <button
                   onClick={() => setGeneratorMode('ai')}
                   className={`px-6 py-3 rounded-lg font-semibold text-sm transition-all duration-300 flex items-center gap-2 ${
                     generatorMode === 'ai'
@@ -458,14 +475,20 @@ export default function Home() {
                     <svg className="w-5 h-5 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                     </svg>
-                    {generatorMode === 'standard' ? 'Configure Generator' : 'AI Email Generator'}
+                    {generatorMode === 'standard' ? 'Configure Generator' : generatorMode === 'verified' ? 'Verified Email Generator' : 'AI Email Generator'}
                   </h3>
                   <p className="text-sm text-slate-500 mt-1">
-                    {generatorMode === 'standard' ? 'Set your parameters and generate emails' : 'Use AI to create smart email variations'}
+                    {generatorMode === 'standard' ? 'Set your parameters and generate emails' : generatorMode === 'verified' ? 'Generate only valid, deliverable emails' : 'Use AI to create smart email variations'}
                   </p>
                 </div>
                 {generatorMode === 'standard' ? (
                   <EmailForm 
+                    onGenerate={handleGenerate} 
+                    isLoading={isLoading}
+                    setIsLoading={setIsLoading}
+                  />
+                ) : generatorMode === 'verified' ? (
+                  <VerifiedEmailGenerator 
                     onGenerate={handleGenerate} 
                     isLoading={isLoading}
                     setIsLoading={setIsLoading}
@@ -1502,7 +1525,7 @@ email3@example.com"
                 </p>
               </div>
               <RealEmailFinder 
-                onEmailsFound={(foundEmails) => {
+                onEmailsFound={(foundEmails: string[]) => {
                   setEmails(foundEmails);
                   setMeta({ 
                     count: foundEmails.length, 
