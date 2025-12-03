@@ -137,3 +137,23 @@ model VerifiedEmail {
   @@index([lastVerifiedAt])
   @@index([status])
 }
+
+model Job {
+  id         String   @id @default(cuid())
+  type       String   // generate-emails, verify-emails, scrape-emails, ai-generate, etc.
+  status     String   // pending, running, completed, failed, cancelled
+  progress   Int      @default(0) // 0-100
+  resultData Json?    // Final results when completed
+  metadata   Json?    // Job parameters and intermediate state
+  errorMessage String? // Error details if failed
+  userId     String?  // Optional user tracking
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  completedAt DateTime?
+  
+  @@index([type])
+  @@index([status])
+  @@index([userId])
+  @@index([createdAt])
+  @@index([status, type])
+}
