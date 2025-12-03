@@ -117,9 +117,12 @@ model SavedEmail {
   countryCode  String?
   provider     String?
   notes        String?
+  userId       String?  // Temporarily optional for migration
+  user         User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt    DateTime @default(now())
   updatedAt    DateTime
 
+  @@index([userId])
   @@index([createdAt])
 }
 
@@ -138,6 +141,20 @@ model VerifiedEmail {
   @@index([status])
 }
 
+model User {
+  id            String         @id @default(cuid())
+  email         String         @unique
+  password      String
+  name          String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  jobs          Job[]
+  emailRecords  EmailRecord[]
+  savedEmails   SavedEmail[]
+
+  @@index([email])
+}
+
 model Job {
   id         String   @id @default(cuid())
   type       String   // generate-emails, verify-emails, scrape-emails, ai-generate, etc.
@@ -146,7 +163,8 @@ model Job {
   resultData Json?    // Final results when completed
   metadata   Json?    // Job parameters and intermediate state
   errorMessage String? // Error details if failed
-  userId     String?  // Optional user tracking
+  userId     String?  // User tracking (temporarily optional for migration)
+  user       User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
   completedAt DateTime?
@@ -156,4 +174,19 @@ model Job {
   @@index([userId])
   @@index([createdAt])
   @@index([status, type])
+}
+
+model EmailRecord {
+  id           String   @id @default(cuid())
+  emailAddress String
+  countryCode  String?
+  pattern      String?
+  provider     String?
+  metadata     Json?
+  userId       String?  // Temporarily optional for migration
+  user         User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+  
+  @@index([userId])
+  @@index([createdAt])
 }

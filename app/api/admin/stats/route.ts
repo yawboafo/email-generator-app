@@ -1,44 +1,46 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 
+// Set a timeout for the query
+export const maxDuration = 10; // 10 seconds max
+
 export async function GET() {
   try {
-    const stats = await Promise.all([
-      prisma.country.count(),
-      prisma.firstName.count(),
-      prisma.lastName.count(),
-      prisma.city.count(),
-      prisma.emailProvider.count(),
-      prisma.patternElement.count(),
-      prisma.pattern.count(),
-      prisma.savedEmail.count(),
-      prisma.emailGeneration.count(),
-      prisma.verifiedEmail.count(),
-      prisma.verifiedEmail.count({ where: { status: 'valid' } }),
-      prisma.verifiedEmail.count({ where: { status: 'risky' } }),
+    // Use raw SQL for faster counts on large tables
+    const [
+      countries,
+      firstNames,
+      lastNames,
+      cities,
+      emailProviders,
+      patternElements,
+      patterns,
+      savedEmails,
+      emailGenerations,
+    ] = await Promise.all([
+      prisma.$queryRaw<[{ count: bigint }]>`SELECT COUNT(*) as count FROM "Country"`,
+      prisma.$queryRaw<[{ count: bigint }]>`SELECT COUNT(*) as count FROM "FirstName"`,
+      prisma.$queryRaw<[{ count: bigint }]>`SELECT COUNT(*) as count FROM "LastName"`,
+      prisma.$queryRaw<[{ count: bigint }]>`SELECT COUNT(*) as count FROM "City"`,
+      prisma.$queryRaw<[{ count: bigint }]>`SELECT COUNT(*) as count FROM "EmailProvider"`,
+      prisma.$queryRaw<[{ count: bigint }]>`SELECT COUNT(*) as count FROM "PatternElement"`,
+      prisma.$queryRaw<[{ count: bigint }]>`SELECT COUNT(*) as count FROM "Pattern"`,
+      prisma.$queryRaw<[{ count: bigint }]>`SELECT COUNT(*) as count FROM "SavedEmail"`,
+      prisma.$queryRaw<[{ count: bigint }]>`SELECT COUNT(*) as count FROM "EmailGeneration"`,
     ]);
-
-    // Get sample data
-    const countries = await prisma.country.findMany({
-      select: { code: true, name: true, _count: { select: { FirstName: true, LastName: true, City: true } } },
-    });
 
     return NextResponse.json({
       stats: {
-        countries: stats[0],
-        firstNames: stats[1],
-        lastNames: stats[2],
-        cities: stats[3],
-        emailProviders: stats[4],
-        patternElements: stats[5],
-        patterns: stats[6],
-        savedEmails: stats[7],
-        emailGenerations: stats[8],
-        verifiedEmails: stats[9],
-        validEmails: stats[10],
-        riskyEmails: stats[11],
+        countries: Number(countries[0].count),
+        firstNames: Number(firstNames[0].count),
+        lastNames: Number(lastNames[0].count),
+        cities: Number(cities[0].count),
+        emailProviders: Number(emailProviders[0].count),
+        patternElements: Number(patternElements[0].count),
+        patterns: Number(patterns[0].count),
+        savedEmails: Number(savedEmails[0].count),
+        emailGenerations: Number(emailGenerations[0].count),
       },
-      countries,
     });
   } catch (error) {
     console.error('Error fetching stats:', error);

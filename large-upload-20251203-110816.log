@@ -1,0 +1,50 @@
+Starting large file upload at Wed Dec  3 11:08:16 GMT 2025
+
+Processing: SA.csv
+  File size: 620M
+  Using streaming parser for large file...
+  Starting upload at Wed Dec  3 11:08:16 GMT 2025...
+Upload Configuration:
+  File: /Users/nykb/Desktop/name_dataset/data/SA.csv
+  Endpoint: http://localhost:3000/api/admin/import/bulk-names-stream
+  Mode: add
+
+File size: 620.38 MB
+Starting upload...
+Upload failed: 
+
+============================================================
+UPLOAD FAILED
+============================================================
+Error: 
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1122:18)
+    at afterConnectMultiple (node:net:1689:7)
+============================================================
+  ✗ Upload failed with exit code 1
+  ✗ Upload failed with exit code 1
+
+Processing: US.csv
+  File size: 598M
+  Using streaming parser for large file...
+  Starting upload at Wed Dec  3 11:08:21 GMT 2025...
+Upload Configuration:
+  File: /Users/nykb/Desktop/name_dataset/data/US.csv
+  Endpoint: http://localhost:3000/api/admin/import/bulk-names-stream
+  Mode: add
+
+File size: 597.89 MB
+Starting upload...
+Upload failed: 
+
+============================================================
+UPLOAD FAILED
+============================================================
+Error: 
+AggregateError [ECONNREFUSED]: 
+    at internalConnectMultiple (node:net:1122:18)
+    at afterConnectMultiple (node:net:1689:7)
+============================================================
+  ✗ Upload failed with exit code 1
+  ✗ Upload failed with exit code 1
+

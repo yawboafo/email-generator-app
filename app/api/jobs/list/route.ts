@@ -5,15 +5,27 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { listJobs, getJobStats, JobType, JobStatus } from '@/lib/jobManager';
+import { getCurrentUser } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
   try {
+    // Verify authentication
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      return NextResponse.json(
+        { error: 'Unauthorized - Please login' },
+        { status: 401 }
+      );
+    }
+
     const { searchParams } = new URL(request.url);
     const type = searchParams.get('type') as JobType | null;
     const status = searchParams.get('status');
-    const userId = searchParams.get('userId') || undefined;
     const limit = parseInt(searchParams.get('limit') || '50');
     const statsOnly = searchParams.get('stats') === 'true';
+
+    // Always filter by current user's ID - enforce user isolation
+    const userId = currentUser.userId;
 
     // Return stats if requested
     if (statsOnly) {

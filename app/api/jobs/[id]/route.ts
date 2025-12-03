@@ -5,12 +5,22 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getCurrentUser } from '@/lib/auth';
 
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Verify authentication
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      return NextResponse.json(
+        { error: 'Unauthorized - Please login' },
+        { status: 401 }
+      );
+    }
+
     const { id: jobId } = await params;
 
     if (!jobId) {
@@ -20,7 +30,7 @@ export async function DELETE(
       );
     }
 
-    // Check if job exists
+    // Check if job exists and belongs to current user
     const job = await prisma.job.findUnique({
       where: { id: jobId },
     });
@@ -29,6 +39,14 @@ export async function DELETE(
       return NextResponse.json(
         { error: 'Job not found' },
         { status: 404 }
+      );
+    }
+
+    // Verify ownership
+    if (job.userId !== currentUser.userId) {
+      return NextResponse.json(
+        { error: 'Forbidden - You do not have access to this job' },
+        { status: 403 }
       );
     }
 

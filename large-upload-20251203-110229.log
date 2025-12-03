@@ -1,0 +1,76 @@
+Starting large file upload at Wed Dec  3 11:02:29 GMT 2025
+
+Processing: SA.csv
+  File size: 620M
+  Using streaming parser for large file...
+  Starting upload at Wed Dec  3 11:02:29 GMT 2025...
+Reading CSV file: /Users/nykb/Desktop/name_dataset/data/SA.csv
+File size: 620.38 MB
+Large file detected - using streaming parser...
+
+<--- Last few GCs --->
+
+[88986:0x7fe4ec90a000]    57049 ms: Mark-Compact 4053.9 (4139.3) -> 4041.9 (4141.8) MB, 2047.46 / 0.00 ms  (average mu = 0.185, current mu = 0.014) task; scavenge might not succeed
+[88986:0x7fe4ec90a000]    60435 ms: Mark-Compact 4057.4 (4142.8) -> 4045.4 (4145.3) MB, 3354.59 / 0.00 ms  (average mu = 0.082, current mu = 0.009) task; scavenge might not succeed
+
+
+<--- JS stacktrace --->
+
+FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory
+----- Native stack trace -----
+
+ 1: 0x104720f85 node::OOMErrorHandler(char const*, v8::OOMDetails const&) [/usr/local/Cellar/node@20/20.19.5/bin/node]
+ 2: 0x1048ae48e v8::internal::V8::FatalProcessOutOfMemory(v8::internal::Isolate*, char const*, v8::OOMDetails const&) [/usr/local/Cellar/node@20/20.19.5/bin/node]
+ 3: 0x104a379c9 v8::internal::Heap::FatalProcessOutOfMemory(char const*) [/usr/local/Cellar/node@20/20.19.5/bin/node]
+ 4: 0x104a34dc5 v8::internal::Heap::CollectGarbage(v8::internal::AllocationSpace, v8::internal::GarbageCollectionReason, v8::GCCallbackFlags) [/usr/local/Cellar/node@20/20.19.5/bin/node]
+ 5: 0x104a815fd v8::internal::MinorGCJob::Task::RunInternal() [/usr/local/Cellar/node@20/20.19.5/bin/node]
+ 6: 0x10478f9ca node::PerIsolatePlatformData::RunForegroundTask(std::__1::unique_ptr<v8::Task, std::__1::default_delete<v8::Task>>) [/usr/local/Cellar/node@20/20.19.5/bin/node]
+ 7: 0x10478f6d4 node::PerIsolatePlatformData::FlushForegroundTasksInternal() [/usr/local/Cellar/node@20/20.19.5/bin/node]
+ 8: 0x106c924ba uv__async_io [/usr/local/Cellar/libuv/1.51.0/lib/libuv.1.0.0.dylib]
+ 9: 0x106ca1031 uv__io_poll [/usr/local/Cellar/libuv/1.51.0/lib/libuv.1.0.0.dylib]
+10: 0x106c928e4 uv_run [/usr/local/Cellar/libuv/1.51.0/lib/libuv.1.0.0.dylib]
+11: 0x104640769 node::SpinEventLoopInternal(node::Environment*) [/usr/local/Cellar/node@20/20.19.5/bin/node]
+12: 0x104769877 node::NodeMainInstance::Run(node::ExitCode*, node::Environment*) [/usr/local/Cellar/node@20/20.19.5/bin/node]
+13: 0x1047695e2 node::NodeMainInstance::Run() [/usr/local/Cellar/node@20/20.19.5/bin/node]
+14: 0x1046e4db9 node::Start(int, char**) [/usr/local/Cellar/node@20/20.19.5/bin/node]
+15: 0x7ff80f347781 start [/usr/lib/dyld]
+  ✗ Upload failed with exit code 134
+  ✗ Upload failed with exit code 134
+
+Processing: US.csv
+  File size: 598M
+  Using streaming parser for large file...
+  Starting upload at Wed Dec  3 11:03:34 GMT 2025...
+Reading CSV file: /Users/nykb/Desktop/name_dataset/data/US.csv
+File size: 597.89 MB
+Large file detected - using streaming parser...
+
+<--- Last few GCs --->
+
+[89471:0x7f972c70a000]    57337 ms: Mark-Compact 4054.8 (4137.4) -> 4041.8 (4140.2) MB, 1760.93 / 0.00 ms  (average mu = 0.266, current mu = 0.016) task; scavenge might not succeed
+[89471:0x7f972c70a000]    60364 ms: Mark-Compact 4058.7 (4141.4) -> 4045.8 (4144.2) MB, 2999.40 / 0.00 ms  (average mu = 0.122, current mu = 0.009) task; scavenge might not succeed
+
+
+<--- JS stacktrace --->
+
+FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory
+----- Native stack trace -----
+
+ 1: 0x1019d6f85 node::OOMErrorHandler(char const*, v8::OOMDetails const&) [/usr/local/Cellar/node@20/20.19.5/bin/node]
+ 2: 0x101b6448e v8::internal::V8::FatalProcessOutOfMemory(v8::internal::Isolate*, char const*, v8::OOMDetails const&) [/usr/local/Cellar/node@20/20.19.5/bin/node]
+ 3: 0x101ced9c9 v8::internal::Heap::FatalProcessOutOfMemory(char const*) [/usr/local/Cellar/node@20/20.19.5/bin/node]
+ 4: 0x101ceadc5 v8::internal::Heap::CollectGarbage(v8::internal::AllocationSpace, v8::internal::GarbageCollectionReason, v8::GCCallbackFlags) [/usr/local/Cellar/node@20/20.19.5/bin/node]
+ 5: 0x101d375fd v8::internal::MinorGCJob::Task::RunInternal() [/usr/local/Cellar/node@20/20.19.5/bin/node]
+ 6: 0x101a459ca node::PerIsolatePlatformData::RunForegroundTask(std::__1::unique_ptr<v8::Task, std::__1::default_delete<v8::Task>>) [/usr/local/Cellar/node@20/20.19.5/bin/node]
+ 7: 0x101a456d4 node::PerIsolatePlatformData::FlushForegroundTasksInternal() [/usr/local/Cellar/node@20/20.19.5/bin/node]
+ 8: 0x103f484ba uv__async_io [/usr/local/Cellar/libuv/1.51.0/lib/libuv.1.0.0.dylib]
+ 9: 0x103f57031 uv__io_poll [/usr/local/Cellar/libuv/1.51.0/lib/libuv.1.0.0.dylib]
+10: 0x103f488e4 uv_run [/usr/local/Cellar/libuv/1.51.0/lib/libuv.1.0.0.dylib]
+11: 0x1018f6769 node::SpinEventLoopInternal(node::Environment*) [/usr/local/Cellar/node@20/20.19.5/bin/node]
+12: 0x101a1f877 node::NodeMainInstance::Run(node::ExitCode*, node::Environment*) [/usr/local/Cellar/node@20/20.19.5/bin/node]
+13: 0x101a1f5e2 node::NodeMainInstance::Run() [/usr/local/Cellar/node@20/20.19.5/bin/node]
+14: 0x10199adb9 node::Start(int, char**) [/usr/local/Cellar/node@20/20.19.5/bin/node]
+15: 0x7ff80f347781 start [/usr/lib/dyld]
+  ✗ Upload failed with exit code 134
+  ✗ Upload failed with exit code 134
+

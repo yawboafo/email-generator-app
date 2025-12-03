@@ -5,15 +5,32 @@
 
 import { NextRequest } from 'next/server';
 import { getJob } from '@/lib/jobManager';
+import { getCurrentUser } from '@/lib/auth';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // Verify authentication
+  const currentUser = await getCurrentUser();
+  if (!currentUser) {
+    return new Response('Unauthorized - Please login', { status: 401 });
+  }
+
   const { id: jobId } = await params;
 
   if (!jobId) {
     return new Response('Job ID is required', { status: 400 });
+  }
+
+  // Verify job exists and user has access
+  const initialJob = await getJob(jobId);
+  if (!initialJob) {
+    return new Response('Job not found', { status: 404 });
+  }
+
+  if (initialJob.userId !== currentUser.userId) {
+    return new Response('Forbidden - You do not have access to this job', { status: 403 });
   }
 
   // Create a readable stream for SSE

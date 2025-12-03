@@ -13,10 +13,14 @@ import RealEmailFinder from '@/components/RealEmailFinder';
 import JobBasedEmailForm from '@/components/JobBasedEmailForm';
 import JobBasedVerifier from '@/components/JobBasedVerifier';
 import JobBasedScraper from '@/components/JobBasedScraper';
+import ProtectedRoute from '@/components/ProtectedRoute';
 import { SavedEmailBatch, Country, NamePattern } from '@/types';
 import { saveEmailBatch, getSavedEmailBatches } from '@/lib/storage';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function Home() {
+  const { user, logout } = useAuth();
+  const [showUserMenu, setShowUserMenu] = useState(false);
   const [emails, setEmails] = useState<string[]>([]);
   const [meta, setMeta] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -333,9 +337,10 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50">
-      {/* Modern SaaS Header - Clean & Minimal */}
-      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-sm">
+    <ProtectedRoute>
+      <main className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-50">
+        {/* Modern SaaS Header - Clean & Minimal */}
+        <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-sm">
         <div className="max-w-[1400px] mx-auto px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* Logo & Brand */}
@@ -351,7 +356,7 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Quick Actions */}
+            {/* Quick Actions & User Menu */}
             <div className="flex items-center gap-3">
               {savedBatchCount > 0 && (
                 <div className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-slate-100 rounded-lg">
@@ -370,6 +375,47 @@ export default function Home() {
                 </svg>
                 Admin
               </a>
+
+              {/* User Menu */}
+              <div className="relative">
+                <button
+                  onClick={() => setShowUserMenu(!showUserMenu)}
+                  className="flex items-center gap-2 px-3 py-2 hover:bg-slate-100 rounded-lg transition-colors"
+                >
+                  <div className="h-8 w-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white font-semibold text-sm">
+                    {user?.name?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || 'U'}
+                  </div>
+                  <div className="hidden md:block text-left">
+                    <p className="text-sm font-medium text-slate-900">{user?.name || 'User'}</p>
+                    <p className="text-xs text-slate-500">{user?.email}</p>
+                  </div>
+                  <svg className="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+
+                {/* Dropdown Menu */}
+                {showUserMenu && (
+                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-slate-200 py-2 z-50">
+                    <div className="px-4 py-3 border-b border-slate-200">
+                      <p className="text-sm font-medium text-slate-900">{user?.name || 'User'}</p>
+                      <p className="text-xs text-slate-500 truncate">{user?.email}</p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        logout();
+                        setShowUserMenu(false);
+                      }}
+                      className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                      </svg>
+                      Logout
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -1702,5 +1748,6 @@ email3@example.com"
         onSave={handleSaveProviderKeys}
       />
     </main>
+    </ProtectedRoute>
   );
 }

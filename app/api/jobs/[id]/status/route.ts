@@ -5,12 +5,22 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getJob } from '@/lib/jobManager';
+import { getCurrentUser } from '@/lib/auth';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Verify authentication
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      return NextResponse.json(
+        { error: 'Unauthorized - Please login' },
+        { status: 401 }
+      );
+    }
+
     const { id: jobId } = await params;
 
     if (!jobId) {
@@ -26,6 +36,14 @@ export async function GET(
       return NextResponse.json(
         { error: 'Job not found' },
         { status: 404 }
+      );
+    }
+
+    // Verify ownership
+    if (job.userId !== currentUser.userId) {
+      return NextResponse.json(
+        { error: 'Forbidden - You do not have access to this job' },
+        { status: 403 }
       );
     }
 

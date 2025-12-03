@@ -28,6 +28,7 @@ type ImportType = 'countries' | 'firstnames' | 'lastnames' | 'cities' | 'provide
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<ImportType>('bulknames');
   const [stats, setStats] = useState<Stats | null>(null);
+  const [statsLoading, setStatsLoading] = useState(true);
   const [loading, setLoading] = useState(false);
   const [importMode, setImportMode] = useState<'add' | 'replace'>('add');
   const [useFastImport, setUseFastImport] = useState(true); // Default to fast import
@@ -48,16 +49,22 @@ export default function AdminDashboard() {
   });
 
   useEffect(() => {
+    // Load stats in background without blocking UI
     fetchStats();
   }, []);
 
   const fetchStats = async () => {
+    setStatsLoading(true);
     try {
       const res = await fetch('/api/admin/stats');
-      const data = await res.json();
-      setStats(data.stats);
+      if (res.ok) {
+        const data = await res.json();
+        setStats(data.stats);
+      }
     } catch (error) {
       console.error('Error fetching stats:', error);
+    } finally {
+      setStatsLoading(false);
     }
   };
 
@@ -354,13 +361,22 @@ Ahmad,Khan,M,AF`,
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Stats Cards */}
-        {stats && (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
-            <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
-              <div className="text-sm font-medium text-gray-600">Countries</div>
-              <div className="text-3xl font-bold text-indigo-600 mt-2">{stats.countries.toLocaleString()}</div>
-            </div>
-            <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
+          {statsLoading && !stats ? (
+            // Loading skeletons
+            Array.from({ length: 9 }).map((_, i) => (
+              <div key={i} className="bg-white rounded-xl shadow-lg p-6 border border-gray-100 animate-pulse">
+                <div className="h-4 bg-gray-200 rounded w-3/4 mb-3"></div>
+                <div className="h-8 bg-gray-300 rounded w-1/2"></div>
+              </div>
+            ))
+          ) : stats ? (
+            <>
+              <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
+                <div className="text-sm font-medium text-gray-600">Countries</div>
+                <div className="text-3xl font-bold text-indigo-600 mt-2">{stats.countries.toLocaleString()}</div>
+              </div>
+              <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
               <div className="text-sm font-medium text-gray-600">First Names</div>
               <div className="text-3xl font-bold text-purple-600 mt-2">{stats.firstNames.toLocaleString()}</div>
             </div>
@@ -392,8 +408,14 @@ Ahmad,Khan,M,AF`,
               <div className="text-sm font-medium text-gray-600">Generations</div>
               <div className="text-3xl font-bold text-red-600 mt-2">{stats.emailGenerations.toLocaleString()}</div>
             </div>
-          </div>
-        )}
+          </>
+          ) : (
+            // Show empty state if loading failed
+            <div className="col-span-full bg-yellow-50 border border-yellow-200 rounded-xl p-4 text-center">
+              <p className="text-sm text-yellow-800">Stats temporarily unavailable. Import functionality is still active below.</p>
+            </div>
+          )}
+        </div>
 
         {/* Main Content */}
         <div className="bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden">

@@ -5,11 +5,21 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createJob, JobType, JobMetadata } from '@/lib/jobManager';
+import { getCurrentUser } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
   try {
+    // Verify authentication
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      return NextResponse.json(
+        { error: 'Unauthorized - Please login' },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
-    const { type, metadata, userId } = body;
+    const { type, metadata } = body;
 
     if (!type) {
       return NextResponse.json(
@@ -35,10 +45,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Use authenticated user's ID
     const jobId = await createJob(
       type as JobType,
       metadata || {},
-      userId
+      currentUser.userId
     );
 
     return NextResponse.json({
