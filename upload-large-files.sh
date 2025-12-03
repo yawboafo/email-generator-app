@@ -5,13 +5,15 @@
 # This script uses the improved streaming upload helper
 
 DATA_DIR="${1:-/Users/nykb/Desktop/name_dataset/data}"
-API_URL="${2:-https://email-generator-app-production.up.railway.app/api/admin/import/bulk-names-stream}"
+
+# Set DATABASE_URL (Railway PostgreSQL)
+export DATABASE_URL="postgresql://postgres:CxSMucbtxZudQjUlctsqZbtdjUAiMWsB@ballast.proxy.rlwy.net:12936/railway?schema=public"
 
 echo "==================================="
-echo "Uploading Large CSV Files"
+echo "Uploading Large CSV Files to Railway DB"
 echo "==================================="
 echo "Data directory: $DATA_DIR"
-echo "API URL: $API_URL"
+echo "Database: Direct PostgreSQL connection"
 echo ""
 
 # Large files that need streaming
@@ -37,10 +39,10 @@ for FILE in "${LARGE_FILES[@]}"; do
   echo "  File size: $FILE_SIZE" | tee -a "$LOG_FILE"
   echo "  Using streaming parser for large file..." | tee -a "$LOG_FILE"
   
-  # Run direct file upload (server-side streaming)
+  # Run direct database upload
   {
     echo "  Starting upload at $(date)..."
-    node upload-csv-direct.js "$CSV_PATH" "$API_URL" "add" 2>&1
+    node upload-to-railway-db.js "$CSV_PATH" 2>&1
     EXIT_CODE=$?
     
     if [ $EXIT_CODE -eq 0 ]; then

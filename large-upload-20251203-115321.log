@@ -1,0 +1,64 @@
+Starting large file upload at Wed Dec  3 11:53:21 GMT 2025
+
+Processing: SA.csv
+  File size: 620M
+  Using streaming parser for large file...
+  Starting upload at Wed Dec  3 11:53:21 GMT 2025...
+
+=== PostgreSQL Direct Upload ===
+File: /Users/nykb/Desktop/name_dataset/data/SA.csv
+Database: ballast.proxy.rlwy.net:12936
+Batch Size: 10000
+
+File size: 620.38 MB
+
+Loading countries...
+Loaded 105 countries from database
+
+Processing file...
+
+Batch 1: Processing 10000 records...
+============================================================
+UPLOAD FAILED
+============================================================
+Error: null value in column "updatedAt" of relation "FirstName" violates not-null constraint
+error: null value in column "updatedAt" of relation "FirstName" violates not-null constraint
+    at /Users/nykb/email-generator-app/node_modules/pg/lib/client.js:545:17
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async insertBatch (/Users/nykb/email-generator-app/upload-to-railway-db.js:146:22)
+    at async main (/Users/nykb/email-generator-app/upload-to-railway-db.js:226:24)
+============================================================
+  ✗ Upload failed with exit code 1
+  ✗ Upload failed with exit code 1
+
+Processing: US.csv
+  File size: 598M
+  Using streaming parser for large file...
+  Starting upload at Wed Dec  3 11:53:30 GMT 2025...
+
+=== PostgreSQL Direct Upload ===
+File: /Users/nykb/Desktop/name_dataset/data/US.csv
+Database: ballast.proxy.rlwy.net:12936
+Batch Size: 10000
+
+File size: 597.89 MB
+
+Loading countries...
+Loaded 105 countries from database
+
+Processing file...
+
+Batch 1: Processing 10000 records...
+============================================================
+UPLOAD FAILED
+============================================================
+Error: null value in column "updatedAt" of relation "FirstName" violates not-null constraint
+error: null value in column "updatedAt" of relation "FirstName" violates not-null constraint
+    at /Users/nykb/email-generator-app/node_modules/pg/lib/client.js:545:17
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async insertBatch (/Users/nykb/email-generator-app/upload-to-railway-db.js:146:22)
+    at async main (/Users/nykb/email-generator-app/upload-to-railway-db.js:226:24)
+============================================================
+  ✗ Upload failed with exit code 1
+  ✗ Upload failed with exit code 1
+

@@ -1,0 +1,77 @@
+Starting large file upload at Wed Dec  3 11:57:51 GMT 2025
+
+Processing: SA.csv
+  File size: 620M
+  Using streaming parser for large file...
+  Starting upload at Wed Dec  3 11:57:51 GMT 2025...
+
+=== PostgreSQL Direct Upload ===
+File: /Users/nykb/Desktop/name_dataset/data/SA.csv
+Database: ballast.proxy.rlwy.net:12936
+Batch Size: 10000
+
+File size: 620.38 MB
+
+Loading countries...
+Loaded 105 countries from database
+
+Processing file...
+
+Batch 1: Processing 10000 records... ✓ 5236 imported, 4764 skipped
+Batch 2: Processing 10000 records... ✓ 5758 imported, 3500 skipped
+Batch 3: Processing 10000 records... ✓ 8020 imported, 964 skipped
+Batch 4: Processing 10000 records... ✓ 5634 imported, 3024 skipped
+Batch 5: Processing 10000 records... ✓ 7878 imported, 569 skipped
+Batch 6: Processing 10000 records... ✓ 5758 imported, 2553 skipped
+Batch 7: Processing 10000 records... ✓ 5359 imported, 2812 skipped
+Batch 8: Processing 10000 records... ✓ 7183 imported, 813 skipped
+Batch 9: Processing 10000 records... ✓ 3734 imported, 4388 skipped
+Batch 10: Processing 10000 records... ✓ 4861 imported, 3165 skipped
+Batch 11: Processing 10000 records... ✓ 1922 imported, 6720 skipped
+Batch 12: Processing 10000 records... ✓ 4514 imported, 3643 skipped
+Batch 13: Processing 10000 records... ✓ 4476 imported, 3743 skipped
+Batch 14: Processing 10000 records... ✓ 6931 imported, 866 skipped
+Batch 15: Processing 10000 records... ✓ 6356 imported, 1518 skipped
+Batch 16: Processing 10000 records... ✓ 3862 imported, 4102 skipped
+Batch 17: Processing 10000 records... ✓ 4570 imported, 3281 skipped
+Batch 18: Processing 10000 records... ✓ 5974 imported, 1747 skipped
+Batch 19: Processing 10000 records... ✓ 3873 imported, 4299 skipped
+Batch 20: Processing 10000 records... ✓ 3872 imported, 4001 skipped
+Batch 21: Processing 10000 records... ✓ 4466 imported, 3441 skipped
+Batch 22: Processing 10000 records... ✓ 4770 imported, 3105 skipped
+Batch 23: Processing 10000 records... ✓ 6380 imported, 1234 skipped
+Batch 24: Processing 10000 records... ✓ 4427 imported, 3309 skipped
+Batch 25: Processing 10000 records... ✓ 6499 imported, 1111 skipped
+Batch 26: Processing 10000 records... ✓ 4917 imported, 2902 skipped
+Batch 27: Processing 10000 records... ✓ 4658 imported, 3260 skipped
+Batch 28: Processing 10000 records... ✓ 7948 imported, 1881 skipped
+Batch 29: Processing 10000 records... ✓ 8455 imported, 237 skipped
+Batch 30: Processing 10000 records... ✓ 7415 imported, 893 skipped
+Batch 31: Processing 10000 records... ✓ 5855 imported, 2170 skipped
+Batch 32: Processing 10000 records... ✓ 5926 imported, 1875 skipped
+Batch 33: Processing 10000 records... ✓ 4557 imported, 3180 skipped
+Batch 34: Processing 10000 records... ✓ 5584 imported, 2072 skipped
+Batch 35: Processing 10000 records... ✓ 4854 imported, 2565 skipped
+Batch 36: Processing 10000 records... ✓ 5808 imported, 1589 skipped
+Batch 37: Processing 10000 records... ✓ 8994 imported, -560 skipped
+Batch 38: Processing 10000 records... ✓ 5121 imported, 2258 skipped
+Batch 39: Processing 10000 records... ✓ 5191 imported, 2113 skipped
+Batch 40: Processing 10000 records... ✓ 5600 imported, 1649 skipped
+Batch 41: Processing 10000 records... ✓ 6013 imported, 997 skipped
+Batch 42: Processing 10000 records... ✓ 5371 imported, 1898 skipped
+Batch 43: Processing 10000 records... ✓ 7086 imported, -171 skipped
+Batch 44: Processing 10000 records... ✓ 9030 imported, -2142 skipped
+Batch 45: Processing 10000 records... ✓ 6365 imported, 547 skipped
+Batch 46: Processing 10000 records... ✓ 7552 imported, -731 skipped
+Batch 47: Processing 10000 records... ✓ 5319 imported, 1527 skipped
+Batch 48: Processing 10000 records... ✓ 6008 imported, 691 skipped
+Batch 49: Processing 10000 records... ✓ 5009 imported, 1113 skipped
+Batch 50: Processing 10000 records... ✓ 5664 imported, 29 skipped
+Batch 51: Processing 10000 records... ✓ 5950 imported, -412 skipped
+Batch 52: Processing 10000 records... ✓ 4686 imported, 899 skipped
+Batch 53: Processing 10000 records... ✓ 4341 imported, 1989 skipped
+Batch 54: Processing 10000 records... ✓ 5164 imported, 408 skipped
+Batch 55: Processing 10000 records... ✓ 3127 imported, 3352 skipped
+Batch 56: Processing 10000 records... ✓ 3637 imported, 2496 skipped
+Batch 57: Processing 10000 records... ✓ 4202 imported, 1678 skipped
+Batch 58: Processing 10000 records...
