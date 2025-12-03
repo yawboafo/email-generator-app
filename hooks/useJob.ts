@@ -203,6 +203,38 @@ export function useJob(jobId: string | null, options: UseJobOptions = {}) {
     }
   }, [persistKey]);
 
+  // Delete job
+  const deleteJob = useCallback(async (id: string) => {
+    try {
+      const response = await fetch(`/api/jobs/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete job');
+      }
+
+      // Close stream if open
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+      }
+
+      // Clear from localStorage
+      if (persistKey) {
+        localStorage.removeItem(persistKey);
+      }
+
+      // Clear job state
+      setJob(null);
+
+      return { success: true };
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to delete job';
+      setError(errorMessage);
+      throw err;
+    }
+  }, [persistKey]);
+
   return {
     job,
     loading,
@@ -210,6 +242,7 @@ export function useJob(jobId: string | null, options: UseJobOptions = {}) {
     fetchJobStatus,
     streamJob,
     cancelJob,
+    deleteJob,
     isRunning: job?.status === 'running' || job?.status === 'pending',
     isCompleted: job?.status === 'completed',
     isFailed: job?.status === 'failed',

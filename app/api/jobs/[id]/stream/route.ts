@@ -8,9 +8,9 @@ import { getJob } from '@/lib/jobManager';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const jobId = params.id;
+  const { id: jobId } = await params;
 
   if (!jobId) {
     return new Response('Job ID is required', { status: 400 });
