@@ -90,6 +90,7 @@ export async function executeGenerateEmailsJob(jobId: string): Promise<void> {
 
         // Update progress
         const progress = Math.floor((allEmails.length / params.count) * 100);
+        console.log(`📊 Job ${jobId}: Progress ${progress}% (${allEmails.length}/${params.count} emails)`);
         await updateJobProgress(jobId, progress, {
           processedItems: allEmails.length,
           successCount: allEmails.length,

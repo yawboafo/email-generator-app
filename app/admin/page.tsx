@@ -1,6 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useRouter } from 'next/navigation';
+import ProtectedRoute from '@/components/ProtectedRoute';
 import FileUpload from '@/components/FileUpload';
 import BulkImportProgress, { ImportProgress } from '@/components/BulkImportProgress';
 
@@ -14,6 +17,7 @@ interface Stats {
   patterns: number;
   savedEmails: number;
   emailGenerations: number;
+  totalUsers: number;
 }
 
 interface ImportResult {
@@ -25,7 +29,9 @@ interface ImportResult {
 
 type ImportType = 'countries' | 'firstnames' | 'lastnames' | 'cities' | 'providers' | 'patterns' | 'pattern-templates' | 'bulknames';
 
-export default function AdminDashboard() {
+function AdminDashboardContent() {
+  const { user } = useAuth();
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<ImportType>('bulknames');
   const [stats, setStats] = useState<Stats | null>(null);
   const [statsLoading, setStatsLoading] = useState(true);
@@ -47,6 +53,14 @@ export default function AdminDashboard() {
     errors: [],
     message: '',
   });
+
+  // Check if user is admin
+  useEffect(() => {
+    if (user && user.email !== 'admin@yaw.com') {
+      alert('Access denied. Admin privileges required.');
+      router.push('/');
+    }
+  }, [user, router]);
 
   useEffect(() => {
     // Load stats in background without blocking UI
@@ -337,6 +351,18 @@ Ahmad,Khan,M,AF`,
     return examples[type as keyof typeof examples] || '';
   };
 
+  // Show loading while checking admin status
+  if (!user || user.email !== 'admin@yaw.com') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+          <p className="text-slate-600">Verifying admin access...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-white">
       {/* Header */}
@@ -364,7 +390,7 @@ Ahmad,Khan,M,AF`,
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
           {statsLoading && !stats ? (
             // Loading skeletons
-            Array.from({ length: 9 }).map((_, i) => (
+            Array.from({ length: 10 }).map((_, i) => (
               <div key={i} className="bg-white rounded-xl shadow-lg p-6 border border-gray-100 animate-pulse">
                 <div className="h-4 bg-gray-200 rounded w-3/4 mb-3"></div>
                 <div className="h-8 bg-gray-300 rounded w-1/2"></div>
@@ -407,6 +433,10 @@ Ahmad,Khan,M,AF`,
             <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
               <div className="text-sm font-medium text-gray-600">Generations</div>
               <div className="text-3xl font-bold text-red-600 mt-2">{stats.emailGenerations.toLocaleString()}</div>
+            </div>
+            <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
+              <div className="text-sm font-medium text-gray-600">Total Users</div>
+              <div className="text-3xl font-bold text-indigo-600 mt-2">{stats.totalUsers.toLocaleString()}</div>
             </div>
           </>
           ) : (
@@ -631,5 +661,13 @@ Ahmad,Khan,M,AF`,
         </div>
       </div>
     </div>
+  );
+}
+
+export default function AdminDashboard() {
+  return (
+    <ProtectedRoute>
+      <AdminDashboardContent />
+    </ProtectedRoute>
   );
 }

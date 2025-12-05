@@ -1,5 +1,21 @@
 import { SavedEmailBatch, Country, NamePattern } from '@/types';
 
+/**
+ * ⚠️ DEPRECATED - DO NOT USE ⚠️
+ * 
+ * This file uses localStorage which has CRITICAL SECURITY ISSUES:
+ * - No user authentication or isolation
+ * - All users on same browser can see each other's saved emails
+ * - Data lost when browser cache cleared
+ * 
+ * USE INSTEAD: /lib/storageDb.ts
+ * - Database-backed with proper user isolation
+ * - Secure authentication required
+ * - Persistent across devices
+ * 
+ * See: /SAVED_EMAILS_SECURITY_FIX.md for details
+ */
+
 const STORAGE_KEY = 'saved_email_batches';
 
 export const saveEmailBatch = (

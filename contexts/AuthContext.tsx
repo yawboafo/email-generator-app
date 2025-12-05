@@ -47,6 +47,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     fetchUser();
   }, []);
 
+  const clearJobStorage = () => {
+    // Clear all job-related localStorage entries
+    const keys = Object.keys(localStorage);
+    keys.forEach(key => {
+      if (key.startsWith('job-')) {
+        localStorage.removeItem(key);
+      }
+    });
+  };
+
   const login = async (email: string, password: string) => {
     const response = await fetch('/api/auth/login', {
       method: 'POST',
@@ -61,6 +71,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const data = await response.json();
     setUser(data.user);
+    
+    // Clear any stale job data from previous sessions
+    clearJobStorage();
+    
     router.push('/');
     router.refresh();
   };
@@ -79,6 +93,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const data = await response.json();
     setUser(data.user);
+    
+    // Clear any stale job data
+    clearJobStorage();
+    
     router.push('/');
     router.refresh();
   };
@@ -86,6 +104,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' });
     setUser(null);
+    
+    // Clear all job data on logout
+    clearJobStorage();
+    
     router.push('/login');
     router.refresh();
   };

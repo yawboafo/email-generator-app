@@ -303,79 +303,13 @@ async function verifyEmailWithAPI(
   apiKey?: string
 ): Promise<VerificationResult> {
   return verifyEmailWithAPIService(email, 'mailsso', apiKey);
-  // Use the provided API key or default mails.so key
-  const finalApiKey = apiKey || '85e695d6-41e1-4bad-827c-bf03b11d593b';
-
-  try {
-    // Using mails.so API
-    const response = await fetch(
-      `https://api.mails.so/v1/validate?email=${encodeURIComponent(email)}`,
-      { 
-        method: 'GET',
-        headers: {
-          'x-mails-api-key': finalApiKey
-        }
-      }
-    );
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => null);
-      let errorMsg = `Mails.so API error: ${response.status}`;
-      
-      if (response.status === 401) {
-        errorMsg = 'Mails.so API: Invalid or expired API key';
-      } else if (response.status === 429) {
-        errorMsg = 'Mails.so API: Rate limit exceeded';
-      } else if (errorData?.error) {
-        errorMsg = `Mails.so API: ${errorData.error}`;
-      }
-      
-      throw new Error(errorMsg);
-    }
-
-    const responseData = await response.json();
-    const data = responseData.data;
-    
-    if (!data) {
-      throw new Error('Invalid response from Mails.so API');
-    }
-    
-    // Parse mails.so response
-    // mails.so returns: { data: { result, reason, score, etc. }, error }
-    let status: VerificationStatus = 'unknown';
-    
-    if (data.result === 'deliverable') {
-      status = 'valid';
-    } else if (data.result === 'risky') {
-      status = 'risky';
-    } else if (data.result === 'undeliverable') {
-      status = 'invalid';
-    } else {
-      status = 'unknown';
-    }
-
-    return {
-      email,
-      status,
-      reason: `${data.result} - ${data.reason} (score: ${data.score})`,
-      fromCache: false,
-      data: { ...data, timestamp: new Date().toISOString() }
-    };
-  } catch (err) {
-    console.error('Error verifying email with mails.so API:', err);
-    return {
-      email,
-      status: 'unknown',
-      reason: (err as Error)?.message || 'Verification failed',
-      fromCache: false
-    };
-  }
 }
 
 export type VerificationService = 'mailsso' | 'emaillistverify' | 'mailboxlayer' | 'reacher';
 
 /**
  * Verify multiple emails using mails.so bulk API (up to 50 at once)
+ * Note: Mails.so bulk API is asynchronous - it creates a job that processes in the background
  */
 async function verifyEmailsBulkAPI(
   emails: string[],
@@ -391,7 +325,8 @@ async function verifyEmailsBulkAPI(
   const finalApiKey = apiKey || '85e695d6-41e1-4bad-827c-bf03b11d593b';
   
   try {
-    const response = await fetch('https://api.mails.so/v1/bulk', {
+    // Step 1: Submit bulk verification job
+    const response = await fetch('https://api.mails.so/v1/batch', {
       method: 'POST',
       headers: {
         'x-mails-api-key': finalApiKey,
@@ -415,14 +350,26 @@ async function verifyEmailsBulkAPI(
       throw new Error(errorMsg);
     }
 
-    const responseData = await response.json();
+    const jobData = await response.json();
     
-    if (!responseData.data || !Array.isArray(responseData.data)) {
-      throw new Error('Invalid response from Mails.so bulk API');
+    // Check if we got a job ID (async processing)
+    if (jobData.id && jobData.status === 'pending') {
+      console.log(`Mails.so bulk job created: ${jobData.id}, status: ${jobData.status}`);
+      console.log('Note: Bulk verification is async. Falling back to individual verification for immediate results.');
+      
+      // For now, fall back to individual verification since bulk is async
+      // TODO: Implement job polling or webhook handling for async results
+      throw new Error('Bulk API is async - using fallback');
+    }
+    
+    // If we somehow got immediate results (unlikely), process them
+    if (!jobData.data || !Array.isArray(jobData.data)) {
+      console.log('Bulk API did not return immediate results, falling back to individual verification');
+      throw new Error('No immediate data from bulk API');
     }
     
     // Map bulk results to our format
-    return responseData.data.map((item: any) => {
+    return jobData.data.map((item: any) => {
       let status: VerificationStatus = 'unknown';
       
       if (item.result === 'deliverable') {
@@ -442,14 +389,12 @@ async function verifyEmailsBulkAPI(
       };
     });
   } catch (error: unknown) {
-    console.error('Error with mails.so bulk verification:', error);
-    // Return all as unknown on error
-    return emails.map(email => ({
-      email,
-      status: 'unknown' as VerificationStatus,
-      reason: error instanceof Error ? error.message : 'Verification failed',
-      fromCache: false
-    }));
+    console.log('Falling back to individual email verification');
+    
+    // Fallback to individual verification
+    return Promise.all(
+      emails.map(email => verifyEmailWithAPIService(email, service, apiKey))
+    );
   }
 }
 

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { SavedEmailBatch } from '@/types';
-import { getSavedEmailBatches, deleteSavedEmailBatch } from '@/lib/storage';
+import { getSavedEmailBatches, deleteSavedEmailBatch } from '@/lib/storageDb';
 
 interface SavedEmailsListProps {
   onImport?: (batch: SavedEmailBatch) => void;
@@ -15,20 +15,25 @@ export default function SavedEmailsList({ onImport, onImportToSend, onImportToVe
   const [batches, setBatches] = useState<SavedEmailBatch[]>([]);
   const [selectedBatch, setSelectedBatch] = useState<string | null>(null);
 
-  const loadBatches = () => {
-    const saved = getSavedEmailBatches();
-    setBatches(saved);
-    if (onRefresh) onRefresh();
+  const loadBatches = async () => {
+    try {
+      const saved = await getSavedEmailBatches();
+      setBatches(saved);
+      if (onRefresh) onRefresh();
+    } catch (error) {
+      console.error('Error loading batches:', error);
+    }
   };
 
-  useEffect(() => {
-    loadBatches();
-  }, []);
-
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string, name: string) => {
     if (confirm('Are you sure you want to delete this batch?')) {
-      deleteSavedEmailBatch(id);
-      loadBatches();
+      try {
+        await deleteSavedEmailBatch(id, name);
+        await loadBatches();
+      } catch (error) {
+        console.error('Error deleting batch:', error);
+        alert('Failed to delete batch. Please try again.');
+      }
     }
   };
 
@@ -176,7 +181,7 @@ export default function SavedEmailsList({ onImport, onImportToSend, onImportToVe
                       Download
                     </button>
                     <button
-                      onClick={() => handleDelete(batch.id)}
+                      onClick={() => handleDelete(batch.id, batch.name)}
                       className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-md transition-colors"
                       title="Delete this batch"
                     >

@@ -13,9 +13,11 @@ import RealEmailFinder from '@/components/RealEmailFinder';
 import JobBasedEmailForm from '@/components/JobBasedEmailForm';
 import JobBasedVerifier from '@/components/JobBasedVerifier';
 import JobBasedScraper from '@/components/JobBasedScraper';
+import JobBasedVerifiedEmailGenerator from '@/components/JobBasedVerifiedEmailGenerator';
 import ProtectedRoute from '@/components/ProtectedRoute';
+import JobsDashboard from '@/components/JobsDashboard';
 import { SavedEmailBatch, Country, NamePattern } from '@/types';
-import { saveEmailBatch, getSavedEmailBatches } from '@/lib/storage';
+import { saveEmailBatch, getSavedEmailBatches } from '@/lib/storageDb';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function Home() {
@@ -24,9 +26,8 @@ export default function Home() {
   const [emails, setEmails] = useState<string[]>([]);
   const [meta, setMeta] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'generate' | 'send' | 'verify' | 'saved' | 'findreal' | 'jobs'>('generate');
+  const [activeTab, setActiveTab] = useState<'generate' | 'send' | 'verify' | 'saved' | 'findreal' | 'jobs' | 'dashboard'>('generate');
   const [generatorMode, setGeneratorMode] = useState<'standard' | 'ai' | 'verified'>('standard');
-  const [jobMode, setJobMode] = useState<'quick' | 'persistent'>('quick');
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [savedBatchCount, setSavedBatchCount] = useState(0);
   const [sendRecipients, setSendRecipients] = useState('');
@@ -57,13 +58,48 @@ export default function Home() {
   } | null>(null);
 
   useEffect(() => {
-    setSavedBatchCount(getSavedEmailBatches().length);
+    const loadSavedCount = async () => {
+      const batches = await getSavedEmailBatches();
+      setSavedBatchCount(batches.length);
+    };
+    loadSavedCount();
     // Load saved provider keys
     const saved = localStorage.getItem('emailProviderKeys');
     if (saved) {
       setProviderKeys(JSON.parse(saved));
     }
   }, []);
+
+  // Clear stale job data on mount if user is authenticated
+  useEffect(() => {
+    if (user) {
+      // Clear any job entries that might be stale
+      // This is a safety measure in addition to the AuthContext clearing
+      const clearStaleJobs = async () => {
+        const keys = Object.keys(localStorage);
+        const jobKeys = keys.filter(key => key.startsWith('job-'));
+        
+        // Check each job to see if it's accessible
+        for (const key of jobKeys) {
+          const jobId = localStorage.getItem(key);
+          if (jobId) {
+            try {
+              const response = await fetch(`/api/jobs/${jobId}/status`);
+              // If 401/403/404, remove from localStorage
+              if (response.status === 401 || response.status === 403 || response.status === 404) {
+                localStorage.removeItem(key);
+              }
+            } catch (error) {
+              // If fetch fails, remove the key
+              localStorage.removeItem(key);
+            }
+          }
+        }
+      };
+      
+      clearStaleJobs();
+    }
+  }, [user]);
 
   const handleSaveProviderKeys = (keys: EmailProviderKeys) => {
     setProviderKeys(keys);
@@ -103,19 +139,25 @@ export default function Home() {
     }
   };
 
-  const handleSaveBatch = (name: string) => {
+  const handleSaveBatch = async (name: string) => {
     if (emails.length === 0 || !currentGenerationParams) return;
     
-    saveEmailBatch(
-      name,
-      emails,
-      currentGenerationParams.providers,
-      currentGenerationParams.country,
-      currentGenerationParams.pattern
-    );
-    
-    setSavedBatchCount(getSavedEmailBatches().length);
-    alert(`Successfully saved ${emails.length.toLocaleString()} emails!`);
+    try {
+      await saveEmailBatch(
+        name,
+        emails,
+        currentGenerationParams.providers,
+        currentGenerationParams.country,
+        currentGenerationParams.pattern
+      );
+      
+      const batches = await getSavedEmailBatches();
+      setSavedBatchCount(batches.length);
+      alert(`Successfully saved ${emails.length.toLocaleString()} emails!`);
+    } catch (error) {
+      console.error('Error saving batch:', error);
+      alert('Failed to save emails. Please make sure you are logged in.');
+    }
   };
 
   const handleImportToSend = (batch: SavedEmailBatch) => {
@@ -130,8 +172,9 @@ export default function Home() {
     alert(`Imported ${batch.count.toLocaleString()} emails to Verify tab`);
   };
 
-  const refreshSavedCount = () => {
-    setSavedBatchCount(getSavedEmailBatches().length);
+  const refreshSavedCount = async () => {
+    const batches = await getSavedEmailBatches();
+    setSavedBatchCount(batches.length);
   };
 
   const handleSendEmails = async () => {
@@ -366,15 +409,17 @@ export default function Home() {
                   <span className="text-sm font-medium text-slate-700">{savedBatchCount} Saved</span>
                 </div>
               )}
-              <a
-                href="/admin"
-                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-lg transition-all duration-300 font-medium text-sm shadow-md hover:shadow-lg"
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
-                </svg>
-                Admin
-              </a>
+              {user?.email === 'admin@yaw.com' && (
+                <a
+                  href="/admin"
+                  className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white rounded-lg transition-all duration-300 font-medium text-sm shadow-md hover:shadow-lg"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                  </svg>
+                  Admin
+                </a>
+              )}
 
               {/* User Menu */}
               <div className="relative">
@@ -428,7 +473,8 @@ export default function Home() {
           <nav className="inline-flex bg-white rounded-2xl p-1 gap-1 shadow-md border border-slate-200">
             {[
               { id: 'generate', label: 'Generate', icon: 'M12 6v6m0 0v6m0-6h6m-6 0H6' },
-              { id: 'jobs', label: 'Jobs', icon: 'M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15', badge: 'NEW' },
+              { id: 'jobs', label: 'Jobs', icon: 'M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15' },
+              { id: 'dashboard', label: 'Dashboard', icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z', badge: 'NEW' },
               { id: 'findreal', label: 'Find Real', icon: 'M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z' },
               { id: 'send', label: 'Send', icon: 'M12 19l9 2-9-18-9 18 9-2zm0 0v-8' },
               { id: 'verify', label: 'Verify', icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z' },
@@ -466,210 +512,186 @@ export default function Home() {
         {/* Main Content */}
         {activeTab === 'generate' && (
           <div className="space-y-6">
-            {/* Quick vs Persistent Mode Toggle */}
-            <div className="flex justify-center mb-4">
-              <div className="inline-flex bg-slate-100 rounded-xl p-1 gap-1">
+            {/* Generator Mode Toggle - Modern Segmented Control */}
+            <div className="flex justify-center">
+              <div className="inline-flex bg-white rounded-xl p-1 gap-1 shadow-lg border border-slate-200">
                 <button
-                  onClick={() => setJobMode('quick')}
-                  className={`px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 ${
-                    jobMode === 'quick'
-                      ? 'bg-white text-slate-900 shadow-sm'
-                      : 'text-slate-600 hover:text-slate-900'
+                  onClick={() => setGeneratorMode('standard')}
+                  className={`px-6 py-3 rounded-lg font-semibold text-sm transition-all duration-300 flex items-center gap-2 ${
+                    generatorMode === 'standard'
+                      ? 'bg-slate-900 text-white shadow-md'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
                   }`}
                 >
-                  ⚡ Quick Mode
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
+                  </svg>
+                  Standard
                 </button>
                 <button
-                  onClick={() => setJobMode('persistent')}
-                  className={`px-4 py-2 rounded-lg font-medium text-sm transition-all duration-200 flex items-center gap-2 ${
-                    jobMode === 'persistent'
-                      ? 'bg-white text-slate-900 shadow-sm'
-                      : 'text-slate-600 hover:text-slate-900'
+                  onClick={() => setGeneratorMode('verified')}
+                  className={`px-6 py-3 rounded-lg font-semibold text-sm transition-all duration-300 flex items-center gap-2 ${
+                    generatorMode === 'verified'
+                      ? 'bg-gradient-to-br from-green-600 to-emerald-600 text-white shadow-lg shadow-green-500/30'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
                   }`}
                 >
-                  💾 Persistent Jobs
-                  <span className="px-1.5 py-0.5 bg-blue-500 text-white text-xs rounded">NEW</span>
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Verified Only
+                  <span className="px-2 py-0.5 bg-white/20 text-xs font-bold rounded-md">
+                    PRO
+                  </span>
+                </button>
+                <button
+                  onClick={() => setGeneratorMode('ai')}
+                  className={`px-6 py-3 rounded-lg font-semibold text-sm transition-all duration-300 flex items-center gap-2 ${
+                    generatorMode === 'ai'
+                      ? 'bg-gradient-to-br from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-500/30'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                  }`}
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                  AI Powered
+                  <span className="px-2 py-0.5 bg-white/20 text-xs font-bold rounded-md">
+                    NEW
+                  </span>
                 </button>
               </div>
             </div>
 
-            {jobMode === 'quick' && (
-              <>
-                {/* Generator Mode Toggle - Modern Segmented Control */}
-                <div className="flex justify-center">
-                  <div className="inline-flex bg-white rounded-xl p-1 gap-1 shadow-lg border border-slate-200">
-                    <button
-                      onClick={() => setGeneratorMode('standard')}
-                      className={`px-6 py-3 rounded-lg font-semibold text-sm transition-all duration-300 flex items-center gap-2 ${
-                        generatorMode === 'standard'
-                          ? 'bg-slate-900 text-white shadow-md'
-                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-                      }`}
-                    >
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
-                      </svg>
-                      Standard
-                    </button>
-                    <button
-                      onClick={() => setGeneratorMode('verified')}
-                      className={`px-6 py-3 rounded-lg font-semibold text-sm transition-all duration-300 flex items-center gap-2 ${
-                        generatorMode === 'verified'
-                          ? 'bg-gradient-to-br from-green-600 to-emerald-600 text-white shadow-lg shadow-green-500/30'
-                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-                      }`}
-                    >
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      Verified Only
-                      <span className="px-2 py-0.5 bg-white/20 text-xs font-bold rounded-md">
-                        PRO
-                      </span>
-                    </button>
-                    <button
-                      onClick={() => setGeneratorMode('ai')}
-                      className={`px-6 py-3 rounded-lg font-semibold text-sm transition-all duration-300 flex items-center gap-2 ${
-                        generatorMode === 'ai'
-                          ? 'bg-gradient-to-br from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-500/30'
-                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-                      }`}
-                    >
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                      </svg>
-                      AI Powered
-                      <span className="px-2 py-0.5 bg-white/20 text-xs font-bold rounded-md">
-                        NEW
-                      </span>
-                    </button>
-                  </div>
+            {/* Main Content Grid - Responsive & Clean */}
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+              {/* Input Card - Left Side */}
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-lg p-8 transition-all duration-300 hover:shadow-xl">
+                <div className="mb-6">
+                  <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                    <svg className="w-5 h-5 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                    {generatorMode === 'standard' ? 'Configure Generator' : generatorMode === 'verified' ? 'Verified Email Generator' : 'AI Email Generator'}
+                  </h3>
+                  <p className="text-sm text-slate-500 mt-1">
+                    {generatorMode === 'standard' ? 'Set your parameters and generate emails' : generatorMode === 'verified' ? 'Generate only valid, deliverable emails' : 'Use AI to create smart email variations'}
+                  </p>
                 </div>
-              </>
-            )}
-
-            {jobMode === 'persistent' ? (
-              /* Persistent Job Mode */
-              <div className="max-w-5xl mx-auto">
-                <JobBasedEmailForm onGenerate={handleGenerate} />
+                {generatorMode === 'standard' ? (
+                  <EmailForm 
+                    onGenerate={handleGenerate} 
+                    isLoading={isLoading}
+                    setIsLoading={setIsLoading}
+                  />
+                ) : generatorMode === 'verified' ? (
+                  <VerifiedEmailGenerator 
+                    onGenerate={handleGenerate} 
+                    isLoading={isLoading}
+                    setIsLoading={setIsLoading}
+                  />
+                ) : (
+                  <AIEmailGenerator 
+                    onGenerate={handleGenerate} 
+                    isLoading={isLoading}
+                    setIsLoading={setIsLoading}
+                  />
+                )}
               </div>
-            ) : (
-              /* Quick Mode - Original Layout */
-              <>
-                {/* Main Content Grid - Responsive & Clean */}
-                <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                  {/* Input Card - Left Side */}
-                  <div className="bg-white rounded-2xl border border-slate-200 shadow-lg p-8 transition-all duration-300 hover:shadow-xl">
-                    <div className="mb-6">
-                      <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                        <svg className="w-5 h-5 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                        </svg>
-                        {generatorMode === 'standard' ? 'Configure Generator' : generatorMode === 'verified' ? 'Verified Email Generator' : 'AI Email Generator'}
-                      </h3>
-                      <p className="text-sm text-slate-500 mt-1">
-                        {generatorMode === 'standard' ? 'Set your parameters and generate emails' : generatorMode === 'verified' ? 'Generate only valid, deliverable emails' : 'Use AI to create smart email variations'}
-                      </p>
-                    </div>
-                    {generatorMode === 'standard' ? (
-                      <EmailForm 
-                        onGenerate={handleGenerate} 
-                        isLoading={isLoading}
-                        setIsLoading={setIsLoading}
-                      />
-                    ) : generatorMode === 'verified' ? (
-                      <VerifiedEmailGenerator 
-                        onGenerate={handleGenerate} 
-                        isLoading={isLoading}
-                        setIsLoading={setIsLoading}
-                      />
-                    ) : (
-                      <AIEmailGenerator 
-                        onGenerate={handleGenerate} 
-                        isLoading={isLoading}
-                        setIsLoading={setIsLoading}
-                      />
-                    )}
-                  </div>
 
-                  {/* Results Card - Right Side */}
-                  <div className="bg-gradient-to-br from-slate-50 to-white rounded-2xl border border-slate-200 shadow-lg p-8 transition-all duration-300 hover:shadow-xl">
-                    <div className="mb-6">
-                      <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                        <svg className="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        Generated Emails
-                      </h3>
-                      <p className="text-sm text-slate-500 mt-1">
-                        Your generated email addresses will appear here
-                      </p>
-                    </div>
-                    <EmailResults 
-                      emails={emails} 
-                      meta={meta || { count: 0, providersUsed: [] }} 
-                      onSave={() => setShowSaveModal(true)}
-                    />
-                  </div>
+              {/* Results Card - Right Side */}
+              <div className="bg-gradient-to-br from-slate-50 to-white rounded-2xl border border-slate-200 shadow-lg p-8 transition-all duration-300 hover:shadow-xl">
+                <div className="mb-6">
+                  <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                    <svg className="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Generated Emails
+                  </h3>
+                  <p className="text-sm text-slate-500 mt-1">
+                    Your generated email addresses will appear here
+                  </p>
                 </div>
-              </>
-            )}
+                <EmailResults 
+                  emails={emails} 
+                  meta={meta || { count: 0, providersUsed: [] }} 
+                  onSave={() => setShowSaveModal(true)}
+                />
+              </div>
+            </div>
           </div>
         )}
 
         {/* Jobs Tab - Background Job Management */}
         {activeTab === 'jobs' && (
-          <div className="space-y-6">
-            <div className="text-center mb-8">
-              <h2 className="text-3xl font-bold text-slate-900 mb-2">Persistent Background Jobs</h2>
-              <p className="text-slate-600">Long-running operations that survive refresh, resume from checkpoints, and never lose progress</p>
+          <div className="max-w-6xl mx-auto">
+            {/* Compact Header */}
+            <div className="text-center mb-6">
+              <h2 className="text-2xl font-bold text-slate-900">Background Jobs</h2>
+              <p className="text-sm text-slate-500 mt-1">Persistent operations with auto-save and progress tracking</p>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+            {/* Compact Job Type Cards Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               {/* Job-Based Generator */}
-              <div>
+              <div className="bg-white border border-slate-200 rounded-lg p-4 hover:border-slate-300 transition-all">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-base font-bold text-slate-900">Email Generator</h3>
+                  <span className="px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200">
+                    Generator
+                  </span>
+                </div>
                 <JobBasedEmailForm onGenerate={handleGenerate} />
               </div>
 
+              {/* Job-Based Verified Email Generator */}
+              <div className="bg-white border border-slate-200 rounded-lg p-4 hover:border-slate-300 transition-all">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-base font-bold text-slate-900">Verified Generator</h3>
+                  <span className="px-2 py-0.5 rounded text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    Gen + Verify
+                  </span>
+                </div>
+                <JobBasedVerifiedEmailGenerator onGenerate={(generatedEmails, generatedMeta) => {
+                  setEmails(generatedEmails);
+                  // Mark as pre-verified with all emails marked as valid
+                  const verificationResults: any[] = generatedEmails.map(email => ({
+                    email,
+                    status: 'valid',
+                    fromCache: false,
+                    reason: 'Pre-verified during generation'
+                  }));
+                  setMeta({
+                    ...generatedMeta,
+                    preVerified: true,
+                    verificationResults
+                  });
+                }} />
+              </div>
+
               {/* Job-Based Verifier */}
-              <div>
+              <div className="bg-white border border-slate-200 rounded-lg p-4 hover:border-slate-300 transition-all">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-base font-bold text-slate-900">Email Verifier</h3>
+                  <span className="px-2 py-0.5 rounded text-xs font-medium bg-purple-50 text-purple-700 border border-purple-200">
+                    Verifier
+                  </span>
+                </div>
                 <JobBasedVerifier onVerified={(results) => setVerifyResults(results)} />
               </div>
 
               {/* Job-Based Scraper */}
-              <div>
+              <div className="bg-white border border-slate-200 rounded-lg p-4 hover:border-slate-300 transition-all">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-base font-bold text-slate-900">Domain Scraper</h3>
+                  <span className="px-2 py-0.5 rounded text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200">
+                    Scraper
+                  </span>
+                </div>
                 <JobBasedScraper onEmailsFound={(foundEmails) => {
                   setEmails(foundEmails);
                   setMeta({ count: foundEmails.length, source: 'scraper' });
                 }} />
-              </div>
-            </div>
-
-            {/* Info Section */}
-            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-2xl p-8 mt-8">
-              <h3 className="text-xl font-bold text-slate-900 mb-4 flex items-center gap-2">
-                <svg className="w-6 h-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                Why Use Background Jobs?
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-white rounded-xl p-4 border border-blue-100">
-                  <h4 className="font-semibold text-slate-900 mb-2">✓ Never Lose Progress</h4>
-                  <p className="text-sm text-slate-600">Jobs save checkpoints every batch. Close your browser, return days later - pick up exactly where you left off.</p>
-                </div>
-                <div className="bg-white rounded-xl p-4 border border-blue-100">
-                  <h4 className="font-semibold text-slate-900 mb-2">✓ No Duplicate Work</h4>
-                  <p className="text-sm text-slate-600">Email verification checks cache first. Same email? Instant result from database.</p>
-                </div>
-                <div className="bg-white rounded-xl p-4 border border-blue-100">
-                  <h4 className="font-semibold text-slate-900 mb-2">✓ Real-Time Updates</h4>
-                  <p className="text-sm text-slate-600">See progress bars update live via Server-Sent Events. Always know exactly what's happening.</p>
-                </div>
-                <div className="bg-white rounded-xl p-4 border border-blue-100">
-                  <h4 className="font-semibold text-slate-900 mb-2">✓ Enterprise Scale</h4>
-                  <p className="text-sm text-slate-600">Process millions of emails, thousands of verifications, hundreds of domains. No timeouts ever.</p>
-                </div>
               </div>
             </div>
           </div>
@@ -1740,6 +1762,13 @@ email3@example.com"
           </div>
         </div>
       )}
+
+        {/* Dashboard Tab - Job Monitoring */}
+        {activeTab === 'dashboard' && (
+          <div className="max-w-7xl mx-auto">
+            <JobsDashboard />
+          </div>
+        )}
 
       {/* Email Provider Configuration Modal */}
       <EmailProviderConfig

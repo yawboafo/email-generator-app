@@ -13,7 +13,7 @@ export default function JobBasedVerifier({ onVerified }: JobBasedVerifierProps) 
   const [error, setError] = useState<string>('');
   const [jobId, setJobId] = useState<string | null>(null);
 
-  const { job, isRunning, isCompleted, isFailed, cancelJob, deleteJob } = useJob(jobId, {
+  const { job, isRunning, isCompleted, isFailed, isCancelled, cancelJob, deleteJob } = useJob(jobId, {
     persistKey: 'email-verification-job',
     onComplete: (completedJob) => {
       if (completedJob.resultData?.data?.results) {
@@ -63,12 +63,20 @@ export default function JobBasedVerifier({ onVerified }: JobBasedVerifierProps) 
   };
 
   const handleCancel = async () => {
-    if (jobId) {
-      try {
-        await cancelJob(jobId);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to cancel job');
-      }
+    if (!jobId) {
+      console.warn('No jobId to cancel');
+      return;
+    }
+    
+    console.log('Cancelling job:', jobId);
+    try {
+      await cancelJob(jobId);
+      console.log('Job cancelled successfully');
+      // Job state will be updated by the hook
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to cancel job';
+      setError(errorMessage);
+      console.error('Cancel job error:', err);
     }
   };
 
@@ -145,6 +153,11 @@ export default function JobBasedVerifier({ onVerified }: JobBasedVerifierProps) 
               {isFailed && (
                 <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
                   ✗ Failed
+                </span>
+              )}
+              {isCancelled && (
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                  ⊘ Cancelled
                 </span>
               )}
             </div>
@@ -287,12 +300,12 @@ export default function JobBasedVerifier({ onVerified }: JobBasedVerifierProps) 
               <button
                 type="button"
                 onClick={handleCancel}
-                className="flex-1 bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-md transition duration-200"
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-md transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Cancel Job
               </button>
             )}
-            {(isCompleted || isFailed) && (
+            {(isCompleted || isFailed || isCancelled) && (
               <button
                 type="button"
                 onClick={handleDelete}

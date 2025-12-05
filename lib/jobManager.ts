@@ -58,12 +58,17 @@ export interface JobResult {
 
 /**
  * Create a new job
+ * @param userId - Required: All jobs must be associated with a user
  */
 export async function createJob(
   type: JobType,
   metadata: JobMetadata,
-  userId?: string
+  userId: string
 ): Promise<string> {
+  if (!userId) {
+    throw new Error('userId is required to create a job');
+  }
+
   const job = await prisma.job.create({
     data: {
       type,

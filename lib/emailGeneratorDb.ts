@@ -59,20 +59,40 @@ export async function fetchFirstNameBatch(country: Country, gender: Gender, batc
     whereClause.gender = gender;
   }
 
-  // Use raw SQL for better performance with large datasets
-  const names = gender !== 'any'
-    ? await prisma.$queryRaw<Array<{ name: string }>>(
-        Prisma.sql`SELECT name FROM "FirstName" 
-         WHERE "countryId" = ${countryId} AND gender = ${gender}
-         ORDER BY RANDOM() 
-         LIMIT ${batchSize}`
-      )
-    : await prisma.$queryRaw<Array<{ name: string }>>(
-        Prisma.sql`SELECT name FROM "FirstName" 
-         WHERE "countryId" = ${countryId}
-         ORDER BY RANDOM() 
-         LIMIT ${batchSize}`
-      );
+  // Use raw SQL with TABLESAMPLE for much faster random selection on large tables
+  // TABLESAMPLE is orders of magnitude faster than ORDER BY RANDOM() on millions of rows
+  let names: Array<{ name: string }> = [];
+  
+  try {
+    names = gender !== 'any'
+      ? await prisma.$queryRaw<Array<{ name: string }>>(
+          Prisma.sql`SELECT name FROM "FirstName" TABLESAMPLE SYSTEM(5)
+           WHERE "countryId" = ${countryId} AND gender = ${gender}
+           LIMIT ${batchSize}`
+        )
+      : await prisma.$queryRaw<Array<{ name: string }>>(
+          Prisma.sql`SELECT name FROM "FirstName" TABLESAMPLE SYSTEM(5)
+           WHERE "countryId" = ${countryId}
+           LIMIT ${batchSize}`
+        );
+  } catch (error) {
+    console.warn(`⚠️  TABLESAMPLE failed for FirstName, using fallback: ${error}`);
+    // Fallback to simpler query without TABLESAMPLE
+    const limit = Math.min(batchSize, 100); // Cap fallback to 100 for performance
+    names = gender !== 'any'
+      ? await prisma.$queryRaw<Array<{ name: string }>>(
+          Prisma.sql`SELECT name FROM "FirstName"
+           WHERE "countryId" = ${countryId} AND gender = ${gender}
+           ORDER BY RANDOM()
+           LIMIT ${limit}`
+        )
+      : await prisma.$queryRaw<Array<{ name: string }>>(
+          Prisma.sql`SELECT name FROM "FirstName"
+           WHERE "countryId" = ${countryId}
+           ORDER BY RANDOM()
+           LIMIT ${limit}`
+        );
+  }
 
   if (names.length === 0) {
     throw new Error(`No first names found for ${country} and gender ${gender}. Please import name data from the admin panel first.`);
@@ -95,13 +115,25 @@ export async function generateFirstName(country: Country, gender: Gender): Promi
 export async function fetchLastNameBatch(country: Country, batchSize: number): Promise<string[]> {
   const countryId = await getCountryId(country);
 
-  // Use raw SQL for better performance with large datasets
-  const names = await prisma.$queryRaw<Array<{ name: string }>>(
-    Prisma.sql`SELECT name FROM "LastName" 
-     WHERE "countryId" = ${countryId}
-     ORDER BY RANDOM() 
-     LIMIT ${batchSize}`
-  );
+  // Use raw SQL with TABLESAMPLE for much faster random selection on large tables
+  let names: Array<{ name: string }> = [];
+  
+  try {
+    names = await prisma.$queryRaw<Array<{ name: string }>>(
+      Prisma.sql`SELECT name FROM "LastName" TABLESAMPLE SYSTEM(5)
+       WHERE "countryId" = ${countryId}
+       LIMIT ${batchSize}`
+    );
+  } catch (error) {
+    console.warn(`⚠️  TABLESAMPLE failed for LastName, using fallback: ${error}`);
+    const limit = Math.min(batchSize, 100);
+    names = await prisma.$queryRaw<Array<{ name: string }>>(
+      Prisma.sql`SELECT name FROM "LastName"
+       WHERE "countryId" = ${countryId}
+       ORDER BY RANDOM()
+       LIMIT ${limit}`
+    );
+  }
   
   if (names.length === 0) {
     throw new Error(`No last names found for ${country}. Please import name data from the admin panel first.`);
@@ -124,11 +156,10 @@ export async function generateLastName(country: Country): Promise<string> {
 export async function fetchCityBatch(country: Country, batchSize: number): Promise<string[]> {
   const countryId = await getCountryId(country);
 
-  // Use raw SQL for better performance
+  // Use raw SQL with TABLESAMPLE for better performance
   const cities = await prisma.$queryRaw<Array<{ name: string }>>(
-    Prisma.sql`SELECT name FROM "City" 
+    Prisma.sql`SELECT name FROM "City" TABLESAMPLE SYSTEM(5)
      WHERE "countryId" = ${countryId}
-     ORDER BY RANDOM() 
      LIMIT ${batchSize}`
   );
   

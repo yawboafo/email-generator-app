@@ -163,8 +163,8 @@ model Job {
   resultData Json?    // Final results when completed
   metadata   Json?    // Job parameters and intermediate state
   errorMessage String? // Error details if failed
-  userId     String?  // User tracking (temporarily optional for migration)
-  user       User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     String   // User tracking - required for all jobs
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
   completedAt DateTime?

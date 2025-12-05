@@ -6,13 +6,23 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createJob } from '@/lib/jobManager';
-import { executeGenerateEmailsJob } from '@/lib/workers/generateEmailsWorker';
+import { addJobToQueue } from '@/lib/queue';
 import { validateRequest } from '@/lib/emailGeneratorDb';
 import { checkRateLimit, getClientIdentifier } from '@/lib/rateLimit';
+import { getCurrentUser } from '@/lib/auth';
 import type { GenerateEmailsRequest } from '@/types';
 
 export async function POST(request: NextRequest) {
   try {
+    // Verify authentication
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      return NextResponse.json(
+        { error: 'Unauthorized - Please login' },
+        { status: 401 }
+      );
+    }
+
     // Rate limiting
     const clientId = getClientIdentifier(request);
     const rateLimit = checkRateLimit(clientId, 100, 60 * 60 * 1000);
@@ -39,7 +49,37 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create job
+    // Check for duplicate pending/active jobs (deduplication)
+    const prisma = (await import('@/lib/prisma')).default;
+    const recentJob = await prisma.job.findFirst({
+      where: {
+        userId: currentUser.userId,
+        type: 'generate-emails',
+        status: {
+          in: ['pending', 'active']
+        },
+        createdAt: {
+          gte: new Date(Date.now() - 5000) // Within last 5 seconds
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+
+    if (recentJob) {
+      console.warn(`⚠️ Duplicate job creation blocked for user ${currentUser.userId}`);
+      return NextResponse.json({
+        success: true,
+        jobId: recentJob.id,
+        message: 'Using existing job (duplicate prevented)',
+        streamUrl: `/api/jobs/${recentJob.id}/stream`,
+        statusUrl: `/api/jobs/${recentJob.id}/status`,
+        isDuplicate: true
+      });
+    }
+
+    // Create job with userId
     const jobId = await createJob('generate-emails', {
       params: body,
       totalItems: body.count,
@@ -48,12 +88,18 @@ export async function POST(request: NextRequest) {
       failureCount: 0,
       partialResults: [],
       lastProcessedIndex: 0,
-    });
+    }, currentUser.userId);
 
-    // Start job execution in background (don't await)
-    executeGenerateEmailsJob(jobId).catch(error => {
-      console.error(`Background job ${jobId} error:`, error);
-    });
+    // Add job to queue for processing
+    await addJobToQueue(jobId, 'generate-emails', {
+      params: body,
+      totalItems: body.count,
+      processedItems: 0,
+      successCount: 0,
+      failureCount: 0,
+      partialResults: [],
+      lastProcessedIndex: 0,
+    }, currentUser.userId);
 
     return NextResponse.json({
       success: true,

@@ -29,7 +29,8 @@ export async function GET(
     return new Response('Job not found', { status: 404 });
   }
 
-  if (initialJob.userId !== currentUser.userId) {
+  // Deny access if job has no userId (legacy job) or belongs to different user
+  if (!initialJob.userId || initialJob.userId !== currentUser.userId) {
     return new Response('Forbidden - You do not have access to this job', { status: 403 });
   }
 
@@ -69,12 +70,14 @@ export async function GET(
               const update = {
                 type: 'progress',
                 jobId: job.id,
+                jobType: job.type,
                 status: job.status,
                 progress: job.progress,
                 metadata: job.metadata,
                 resultData: job.resultData,
                 errorMessage: job.errorMessage,
                 updatedAt: job.updatedAt,
+                createdAt: job.createdAt,
               };
 
               controller.enqueue(

@@ -5,11 +5,21 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createJob } from '@/lib/jobManager';
-import { executeVerifyEmailsJob } from '@/lib/workers/verifyEmailsWorker';
+import { addJobToQueue } from '@/lib/queue';
 import { VerificationService } from '@/lib/emailVerification';
+import { getCurrentUser } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
   try {
+    // Verify authentication
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      return NextResponse.json(
+        { error: 'Unauthorized - Please login' },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
     const { emails, service, apiKey } = body;
 
@@ -36,7 +46,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create job
+    // Create job with userId
     const jobId = await createJob('verify-emails', {
       params: { emails, service, apiKey },
       totalItems: emails.length,
@@ -45,12 +55,18 @@ export async function POST(request: NextRequest) {
       failureCount: 0,
       partialResults: [],
       lastProcessedIndex: 0,
-    });
+    }, currentUser.userId);
 
-    // Start job execution in background
-    executeVerifyEmailsJob(jobId).catch(error => {
-      console.error(`Background job ${jobId} error:`, error);
-    });
+    // Add job to queue for processing
+    await addJobToQueue(jobId, 'verify-emails', {
+      params: { emails, service, apiKey },
+      totalItems: emails.length,
+      processedItems: 0,
+      successCount: 0,
+      failureCount: 0,
+      partialResults: [],
+      lastProcessedIndex: 0,
+    }, currentUser.userId);
 
     return NextResponse.json({
       success: true,

@@ -14,10 +14,11 @@ const globalForPrisma = globalThis as unknown as {
 if (!globalForPrisma.pool) {
   globalForPrisma.pool = new pg.Pool({ 
     connectionString: process.env.DATABASE_URL,
-    max: 2, // Reduce max connections
+    max: 3, // Increase max connections for worker concurrency
     idleTimeoutMillis: 10000, // Shorter idle timeout
-    connectionTimeoutMillis: 8000, // Shorter connection timeout
-    query_timeout: 5000, // 5 second query timeout
+    connectionTimeoutMillis: 10000, // Increased connection timeout
+    query_timeout: 30000, // 30 second query timeout for large queries
+    statement_timeout: 30000, // 30 second statement timeout
     keepAlive: true,
     keepAliveInitialDelayMillis: 0,
     ssl: false, // Disable SSL for Railway proxy

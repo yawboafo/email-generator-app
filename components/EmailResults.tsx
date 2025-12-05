@@ -17,6 +17,8 @@ interface EmailResultsProps {
   meta: {
     count: number;
     providersUsed: string[];
+    preVerified?: boolean; // If true, emails are already verified
+    verificationResults?: VerificationResult[]; // Pre-existing verification data
   };
   onSave?: () => void;
 }
@@ -55,6 +57,29 @@ export default function EmailResults({ emails, meta, onSave }: EmailResultsProps
       return;
     }
     
+    // If pre-verified data is provided, use it and skip verification
+    if (meta?.preVerified && meta?.verificationResults) {
+      console.log('Using pre-verified email data - skipping verification');
+      verifiedEmailsHashRef.current = currentHash;
+      previousEmailsRef.current = emails;
+      
+      const statusMap = new Map<string, VerificationResult>();
+      let stats = { valid: 0, risky: 0, invalid: 0, unknown: 0 };
+      
+      meta.verificationResults.forEach((result: VerificationResult) => {
+        statusMap.set(result.email, result);
+        if (result.status === 'valid') stats.valid++;
+        else if (result.status === 'risky') stats.risky++;
+        else if (result.status === 'invalid') stats.invalid++;
+        else stats.unknown++;
+      });
+      
+      setVerificationStatuses(statusMap);
+      setVerificationStats(stats);
+      setVerificationProgress({ current: emails.length, total: emails.length });
+      return;
+    }
+    
     // New emails detected - reset state and verify
     verifiedEmailsHashRef.current = currentHash;
     previousEmailsRef.current = emails;
@@ -62,7 +87,7 @@ export default function EmailResults({ emails, meta, onSave }: EmailResultsProps
     // Check cache first, then verify only uncached emails
     console.log('New emails detected - checking cache and verifying');
     checkCacheAndVerify();
-  }, [emails]);
+  }, [emails, meta]);
   
   // Load verification results from database cache
   const loadVerificationFromCache = async () => {

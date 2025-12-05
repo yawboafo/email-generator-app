@@ -40,7 +40,8 @@ export async function GET(
     }
 
     // Verify ownership
-    if (job.userId !== currentUser.userId) {
+    // Deny access if job has no userId (legacy job) or belongs to different user
+    if (!job.userId || job.userId !== currentUser.userId) {
       return NextResponse.json(
         { error: 'Forbidden - You do not have access to this job' },
         { status: 403 }

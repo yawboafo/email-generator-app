@@ -43,29 +43,21 @@ export function useJob(jobId: string | null, options: UseJobOptions = {}) {
     persistKey,
   } = options;
 
-  // Save jobId to localStorage for persistence
-  useEffect(() => {
-    if (jobId && persistKey) {
-      localStorage.setItem(persistKey, jobId);
-    }
-  }, [jobId, persistKey]);
-
-  // Load jobId from localStorage on mount
-  useEffect(() => {
-    if (!jobId && persistKey) {
-      const savedJobId = localStorage.getItem(persistKey);
-      if (savedJobId) {
-        // Fetch status to see if job is still relevant
-        fetchJobStatus(savedJobId);
-      }
-    }
-  }, []);
-
   // Fetch job status
   const fetchJobStatus = useCallback(async (id: string) => {
     try {
       setLoading(true);
       const response = await fetch(`/api/jobs/${id}/status`);
+      
+      // If 401 or 403, the job doesn't belong to current user or user not authenticated - clear it
+      if (response.status === 401 || response.status === 403) {
+        if (persistKey) {
+          localStorage.removeItem(persistKey);
+        }
+        setJob(null);
+        setError(null); // Don't show error for stale jobs
+        return null;
+      }
       
       if (!response.ok) {
         throw new Error('Failed to fetch job status');
@@ -83,91 +75,187 @@ export function useJob(jobId: string | null, options: UseJobOptions = {}) {
     } finally {
       setLoading(false);
     }
-  }, [onError]);
+  }, [onError, persistKey]);
+
+  // Save jobId to localStorage for persistence
+  useEffect(() => {
+    if (jobId && persistKey) {
+      localStorage.setItem(persistKey, jobId);
+    }
+  }, [jobId, persistKey]);
+
+  // Load jobId from localStorage on mount
+  useEffect(() => {
+    if (!jobId && persistKey) {
+      const savedJobId = localStorage.getItem(persistKey);
+      if (savedJobId) {
+        // Fetch status to see if job is still relevant
+        fetchJobStatus(savedJobId).then((job) => {
+          // If job not accessible or completed, clear from localStorage
+          if (!job || job.status === 'completed' || job.status === 'failed' || job.status === 'cancelled') {
+            localStorage.removeItem(persistKey);
+          }
+        });
+      }
+    }
+  }, [jobId, persistKey, fetchJobStatus]);
 
   // Stream job progress
   const streamJob = useCallback((id: string) => {
     // Close existing connection
     if (eventSourceRef.current) {
       eventSourceRef.current.close();
+      eventSourceRef.current = null;
     }
 
     isCompletedRef.current = false;
-    const eventSource = new EventSource(`/api/jobs/${id}/stream`);
-    eventSourceRef.current = eventSource;
-
-    eventSource.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-
-        if (data.type === 'connected') {
-          console.log('Connected to job stream:', data.jobId);
-        } else if (data.type === 'progress') {
-          const updatedJob: JobStatus = {
-            id: data.jobId,
-            type: data.type,
-            status: data.status,
-            progress: data.progress,
-            metadata: data.metadata,
-            resultData: data.resultData,
-            errorMessage: data.errorMessage,
-            createdAt: data.createdAt || new Date().toISOString(),
-            updatedAt: data.updatedAt,
-            completedAt: data.completedAt,
-          };
-
-          setJob(updatedJob);
-          onProgress?.(updatedJob);
-
-          // Check if completed
-          if (
-            !isCompletedRef.current &&
-            (data.status === 'completed' || data.status === 'failed' || data.status === 'cancelled')
-          ) {
-            isCompletedRef.current = true;
-            onComplete?.(updatedJob);
-            
-            // Clean up localStorage on completion
-            if (persistKey) {
-              localStorage.removeItem(persistKey);
-            }
-          }
-        } else if (data.type === 'complete') {
-          eventSource.close();
-        } else if (data.type === 'error') {
-          setError(data.message);
-          onError?.(data.message);
-          eventSource.close();
-        }
-      } catch (err) {
-        console.error('Error parsing SSE message:', err);
+    
+    let cancelled = false;
+    
+    // Check if job is accessible before streaming
+    fetchJobStatus(id).then((job) => {
+      // Check if cancelled while fetching
+      if (cancelled || isCompletedRef.current) {
+        return;
       }
-    };
-
-    eventSource.onerror = (err) => {
-      console.error('SSE connection error:', err);
-      eventSource.close();
       
-      // Try to fetch final status
-      if (!isCompletedRef.current) {
-        fetchJobStatus(id);
+      if (!job) {
+        // Job not accessible or doesn't exist - stop completely
+        isCompletedRef.current = true;
+        setJob(null);
+        setError(null);
+        return;
       }
-    };
+      
+      // If job is already completed, don't start streaming
+      if (job.status === 'completed' || job.status === 'failed' || job.status === 'cancelled') {
+        isCompletedRef.current = true;
+        onComplete?.(job);
+        if (persistKey) {
+          localStorage.removeItem(persistKey);
+        }
+        return;
+      }
+      
+      // Check again if cancelled before creating EventSource
+      if (cancelled || isCompletedRef.current) {
+        return;
+      }
+      
+      const eventSource = new EventSource(`/api/jobs/${id}/stream`);
+      eventSourceRef.current = eventSource;
 
+      eventSource.onmessage = (event) => {
+        // Check if cancelled before processing
+        if (cancelled || isCompletedRef.current) {
+          eventSource.close();
+          return;
+        }
+        
+        try {
+          const data = JSON.parse(event.data);
+
+          if (data.type === 'connected') {
+            console.log('Connected to job stream:', data.jobId);
+          } else if (data.type === 'progress') {
+            const updatedJob: JobStatus = {
+              id: data.jobId,
+              type: data.jobType || 'unknown',
+              status: data.status,
+              progress: data.progress,
+              metadata: data.metadata,
+              resultData: data.resultData,
+              errorMessage: data.errorMessage,
+              createdAt: data.createdAt || new Date().toISOString(),
+              updatedAt: data.updatedAt,
+              completedAt: data.completedAt,
+            };
+
+            setJob(updatedJob);
+            onProgress?.(updatedJob);
+
+            // Check if completed
+            if (
+              !isCompletedRef.current &&
+              (data.status === 'completed' || data.status === 'failed' || data.status === 'cancelled')
+            ) {
+              isCompletedRef.current = true;
+              onComplete?.(updatedJob);
+              
+              // Clean up localStorage on completion
+              if (persistKey) {
+                localStorage.removeItem(persistKey);
+              }
+            }
+          } else if (data.type === 'complete') {
+            eventSource.close();
+          } else if (data.type === 'error') {
+            setError(data.message);
+            onError?.(data.message);
+            eventSource.close();
+          }
+        } catch (err) {
+          console.error('Error parsing SSE message:', err);
+        }
+      };
+
+      eventSource.onerror = (err) => {
+        // Only log actual errors, not normal closures
+        if (eventSource.readyState === EventSource.CLOSED) {
+          console.log('SSE connection closed for job:', id);
+        } else {
+          console.error('SSE connection error:', err);
+        }
+        eventSource.close();
+        
+        // Try to fetch final status if job isn't completed (only once)
+        if (!isCompletedRef.current && !cancelled) {
+          fetchJobStatus(id).then((job) => {
+            if (cancelled || isCompletedRef.current) return;
+            
+            // If job is null (403 or not found), stop trying
+            if (!job) {
+              isCompletedRef.current = true;
+              setJob(null);
+              return;
+            }
+            
+            // If job is actually completed, trigger completion
+            if (job.status === 'completed' || job.status === 'failed' || job.status === 'cancelled') {
+              isCompletedRef.current = true;
+              onComplete?.(job);
+              
+              // Clean up localStorage on completion
+              if (persistKey) {
+                localStorage.removeItem(persistKey);
+              }
+            }
+          });
+        }
+      };
+    });
+
+    // Return cleanup function
     return () => {
-      eventSource.close();
+      cancelled = true;
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+        eventSourceRef.current = null;
+      }
     };
   }, [onProgress, onComplete, onError, persistKey, fetchJobStatus]);
 
   // Start streaming when jobId is available
   useEffect(() => {
     if (jobId && autoStart) {
-      streamJob(jobId);
+      const cleanup = streamJob(jobId);
+      return cleanup;
     }
 
     return () => {
       if (eventSourceRef.current) {
         eventSourceRef.current.close();
+        eventSourceRef.current = null;
       }
     };
   }, [jobId, autoStart, streamJob]);
@@ -180,7 +268,8 @@ export function useJob(jobId: string | null, options: UseJobOptions = {}) {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to cancel job');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to cancel job');
       }
 
       const data = await response.json();
@@ -188,6 +277,14 @@ export function useJob(jobId: string | null, options: UseJobOptions = {}) {
       // Close stream
       if (eventSourceRef.current) {
         eventSourceRef.current.close();
+        eventSourceRef.current = null;
+      }
+
+      // Fetch updated job status to reflect cancelled state
+      const updatedJob = await fetchJobStatus(id);
+      if (updatedJob) {
+        setJob(updatedJob);
+        isCompletedRef.current = true;
       }
 
       // Clear from localStorage
@@ -199,9 +296,10 @@ export function useJob(jobId: string | null, options: UseJobOptions = {}) {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to cancel job';
       setError(errorMessage);
+      onError?.(errorMessage);
       throw err;
     }
-  }, [persistKey]);
+  }, [persistKey, fetchJobStatus, onError]);
 
   // Delete job
   const deleteJob = useCallback(async (id: string) => {
